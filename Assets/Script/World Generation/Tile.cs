@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Tile
 {
-    public List<Tile> neighbors;
+    Vector3[] vertices;
 }
 
 public class TileVert

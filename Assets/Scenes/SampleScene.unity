@@ -151,7 +151,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   useHexes: 0
-  divideDepth: 6
+  divideDepth: 2
   worldRadius: 80
   chunkPrefab: {fileID: 1876215773675517452, guid: 48927058332cf4c4493b81a84fad98bd,
     type: 3}

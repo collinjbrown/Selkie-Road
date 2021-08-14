@@ -6,11 +6,15 @@ public class Chunk : MonoBehaviour
 {
     public Color color;
 
-    public int[] origin;
+    [HideInInspector]
+    public Vector3[] triVerts;
 
     [HideInInspector]
-    public Vector3[] verts;
+    public int[] triTris;
 
     [HideInInspector]
-    public int[] tris;
+    public Vector3[] hexVerts;
+
+    [HideInInspector]
+    public int[] hexTris;
 }
