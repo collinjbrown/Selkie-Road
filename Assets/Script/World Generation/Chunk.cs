@@ -6,6 +6,8 @@ public class Chunk : MonoBehaviour
 {
     public Color color;
 
+    public Chunk[] neighbors;
+
     [HideInInspector]
     public Vector3[] triVerts;
 

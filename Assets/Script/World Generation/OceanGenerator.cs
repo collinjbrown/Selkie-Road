@@ -18,6 +18,8 @@ public class OceanGenerator : MonoBehaviour
     public GameObject planetPrefab;
 
     public List<Chunk> chunks;
+    public Material chunkMaterial;
+
     List<Vector3> hexCenters;
 
     Vector3[] allVerts;
@@ -40,8 +42,11 @@ public class OceanGenerator : MonoBehaviour
         for (int i = 0; i < icoTris.Length; i += 3)
         {
             GameObject g = Instantiate(chunkPrefab, core, Quaternion.identity, this.gameObject.transform);
+            g.GetComponent<MeshRenderer>().material = chunkMaterial;
 
             Chunk c = g.GetComponent<Chunk>();
+
+            c.neighbors = new Chunk[3];
 
             c.triTris = new int[] { 0, 1, 2 };
 
@@ -51,6 +56,27 @@ public class OceanGenerator : MonoBehaviour
             // c.color = Color.white;
 
             chunks.Add(c);
+        }
+
+        foreach (Chunk c in chunks)
+        {
+            int neighborsFound = 0;
+
+            for (int i = 0; i < c.triVerts.Length; i++)
+            {
+                foreach (Chunk n in chunks)
+                {
+                    for (int ni = 0; ni < n.triVerts.Length; ni++)
+                    {
+                        if (c.triVerts[i] == n.triVerts[ni])
+                        {
+                            c.neighbors[neighborsFound] = n;
+                            neighborsFound++;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         Generate();
@@ -106,7 +132,8 @@ public class OceanGenerator : MonoBehaviour
             // Generate Hexes
             foreach (Chunk c in chunks)
             {
-                GenerateHexes(c);
+                float h = (c.triVerts[0] - c.triVerts[1]).sqrMagnitude / 2.0f;
+                GenerateHexes(c, h);
             }
 
             foreach (Chunk c in chunks)
@@ -123,16 +150,17 @@ public class OceanGenerator : MonoBehaviour
         }
 
         // Create the basic land beneath the ocean.
-        CreateLand();
+        // CreateLand();
 
         st.Stop();
-        UnityEngine.Debug.Log($"World Generation took {st.ElapsedMilliseconds} milliseconds to run.");
+        UnityEngine.Debug.Log($"Ocean Generation took {st.ElapsedMilliseconds} milliseconds to run.");
     }
 
     public void CreateLand()
     {
         GameObject newPlanet = Instantiate(planetPrefab, core, Quaternion.identity, this.gameObject.transform);
-        newPlanet.transform.localScale = new Vector3(worldRadius * 1.8f, worldRadius * 1.8f, worldRadius * 1.8f);
+        newPlanet.GetComponent<PlanetGeneration>().worldRadius = worldRadius * 0.8f;
+        newPlanet.GetComponent<PlanetGeneration>().Generate();
     }
 
     public void Subdivide(Chunk chunk, float rad)
@@ -194,7 +222,13 @@ public class OceanGenerator : MonoBehaviour
         chunk.triTris = newTris;
     }
 
-    public void GenerateHexes(Chunk chunk)
+    Vector3 hA = new Vector3(-1, 0, 1);
+    Vector3 hB = new Vector3(-0.5f, Mathf.Sqrt(3 / 2), 1);
+    Vector3 hC = new Vector3(0.5f, Mathf.Sqrt(3 / 2), 1);
+    Vector3 hD = new Vector3(1f, 0, 1);
+    Vector3 hE = new Vector3(0.5f, -Mathf.Sqrt(3 / 2), 1);
+    Vector3 hF = new Vector3(-0.5f, -Mathf.Sqrt(3 / 2), 1);
+    public void GenerateHexes(Chunk chunk, float hexWidth)
     {
         Vector3[] oldVerts = chunk.triVerts;
 
@@ -223,9 +257,55 @@ public class OceanGenerator : MonoBehaviour
                 Vector3[] unsortedCenters = new Vector3[desiredNeighbors];
                 int neighborsFound = 0;
 
-                for (int ci = 0; ci < chunks.Count; ci++)
+                //Vector3 forward = -oldVert.normalized;
+
+                //Vector3 up = new Vector3(0, 0, 0);
+
+                //if (forward != Vector3.up && forward != Vector3.down)
+                //{
+                //    Vector3 a = new Vector3(oldVert.x, 0, oldVert.z) - oldVert;
+                //    Vector3 b = (forward * -2) - oldVert;
+                //    // Vector3 proj = (Vector3.Dot(a, b) / Vector3.Dot(b, b)) * b;
+                //    Vector3 proj = Vector3.Project(a, b);
+
+                //    up = (a - proj).normalized;
+                //}
+                //else if (Vector3.forward == Vector3.up)
+                //{
+                //    up = Vector3.forward;
+                //}
+                //else
+                //{
+                //    up = Vector3.back;
+                //}
+
+                //if (oldVert.y > 0)
+                //{
+                //    up = -up;
+                //}
+
+                //Vector3 right = Vector3.Cross(forward, up).normalized;
+
+                //if (i == 0)
+                //{
+                //    UnityEngine.Debug.Log($"{oldVert} :: {forward} / {up} / {right}.");
+                //}
+
+                //unsortedCenters[0] = RelativeMovement(oldVert, hA, forward, up, right);
+                //unsortedCenters[1] = RelativeMovement(oldVert, hB, forward, up, right);
+                //unsortedCenters[2] = RelativeMovement(oldVert, hC, forward, up, right);
+                //unsortedCenters[3] = RelativeMovement(oldVert, hD, forward, up, right);
+                //unsortedCenters[4] = RelativeMovement(oldVert, hE, forward, up, right);
+
+
+                //if (desiredNeighbors > 5)
+                //{
+                //    unsortedCenters[5] = RelativeMovement(oldVert, hF, forward, up, right);
+                //}
+
+                for (int ci = 0; ci < chunk.neighbors.Length; ci++)
                 {
-                    Chunk c = chunks[ci];
+                    Chunk c = chunk.neighbors[ci];
 
                     for (int v = 0; v < c.triTris.Length; v += 3)
                     {
@@ -238,6 +318,7 @@ public class OceanGenerator : MonoBehaviour
                 }
 
                 Vector3[] centersOfNeighbors = new Vector3[desiredNeighbors];
+                // Vector3[] centersOfNeighbors = unsortedCenters;
 
                 int runs = 0;
 
@@ -351,7 +432,9 @@ public class OceanGenerator : MonoBehaviour
                     runs++;
                 }
 
-                float f = neighborsFound;
+                //float f = neighborsFound;
+                // Vector3[] centersOfNeighbors = unsortedCenters;
+
                 Vector3 hexCenter = new Vector3(0, 0, 0);
 
                 for (int x = 0; x < centersOfNeighbors.Length; x++)
@@ -359,7 +442,7 @@ public class OceanGenerator : MonoBehaviour
                     hexCenter += centersOfNeighbors[x];
                 }
 
-                hexCenter /= f;
+                hexCenter /= desiredNeighbors;
 
                 if (desiredNeighbors == 6)
                 {
@@ -526,6 +609,11 @@ public class OceanGenerator : MonoBehaviour
 
         chunk.hexVerts = newVerts;
         chunk.hexTris = newTris;
+    }
+
+    Vector3 RelativeMovement (Vector3 origin, Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
+    {
+        return new Vector3(p.x * right.x + p.y * up.x + p.z * forward.x + origin.x, p.x * right.y + p.y * up.y + p.z * forward.y + origin.y, p.x * forward.z + p.y * up.z + p.z * forward.z + origin.z);
     }
 
     
