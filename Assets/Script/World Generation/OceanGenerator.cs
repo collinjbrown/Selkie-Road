@@ -62,18 +62,31 @@ public class OceanGenerator : MonoBehaviour
         {
             int neighborsFound = 0;
 
-            for (int i = 0; i < c.triVerts.Length; i++)
+            foreach (Chunk n in chunks)
             {
-                foreach (Chunk n in chunks)
+                if (c != n)
                 {
-                    for (int ni = 0; ni < n.triVerts.Length; ni++)
+                    int sharedVerts = 0;
+
+                    for (int i = 0; i < c.triVerts.Length; i++)
                     {
-                        if (c.triVerts[i] == n.triVerts[ni])
+                        Vector3 v = c.triVerts[i];
+
+                        for (int ni = 0; ni < n.triVerts.Length; ni++)
                         {
-                            c.neighbors[neighborsFound] = n;
-                            neighborsFound++;
-                            break;
+                            Vector3 nv = n.triVerts[ni];
+
+                            if (v == nv)
+                            {
+                                sharedVerts++;
+                            }
                         }
+                    }
+
+                    if (sharedVerts > 3)
+                    {
+                        c.neighbors[neighborsFound] = n;
+                        neighborsFound++;
                     }
                 }
             }
@@ -257,55 +270,11 @@ public class OceanGenerator : MonoBehaviour
                 Vector3[] unsortedCenters = new Vector3[desiredNeighbors];
                 int neighborsFound = 0;
 
-                //Vector3 forward = -oldVert.normalized;
+                // neighbor.triTris is coming up null which doesn't seem like it should be possible.
 
-                //Vector3 up = new Vector3(0, 0, 0);
-
-                //if (forward != Vector3.up && forward != Vector3.down)
-                //{
-                //    Vector3 a = new Vector3(oldVert.x, 0, oldVert.z) - oldVert;
-                //    Vector3 b = (forward * -2) - oldVert;
-                //    // Vector3 proj = (Vector3.Dot(a, b) / Vector3.Dot(b, b)) * b;
-                //    Vector3 proj = Vector3.Project(a, b);
-
-                //    up = (a - proj).normalized;
-                //}
-                //else if (Vector3.forward == Vector3.up)
-                //{
-                //    up = Vector3.forward;
-                //}
-                //else
-                //{
-                //    up = Vector3.back;
-                //}
-
-                //if (oldVert.y > 0)
-                //{
-                //    up = -up;
-                //}
-
-                //Vector3 right = Vector3.Cross(forward, up).normalized;
-
-                //if (i == 0)
-                //{
-                //    UnityEngine.Debug.Log($"{oldVert} :: {forward} / {up} / {right}.");
-                //}
-
-                //unsortedCenters[0] = RelativeMovement(oldVert, hA, forward, up, right);
-                //unsortedCenters[1] = RelativeMovement(oldVert, hB, forward, up, right);
-                //unsortedCenters[2] = RelativeMovement(oldVert, hC, forward, up, right);
-                //unsortedCenters[3] = RelativeMovement(oldVert, hD, forward, up, right);
-                //unsortedCenters[4] = RelativeMovement(oldVert, hE, forward, up, right);
-
-
-                //if (desiredNeighbors > 5)
-                //{
-                //    unsortedCenters[5] = RelativeMovement(oldVert, hF, forward, up, right);
-                //}
-
-                for (int ci = 0; ci < chunk.neighbors.Length; ci++)
+                for (int ci = 0; ci < chunks.Count; ci++)
                 {
-                    Chunk c = chunk.neighbors[ci];
+                    Chunk c = chunks[ci];
 
                     for (int v = 0; v < c.triTris.Length; v += 3)
                     {
@@ -318,7 +287,6 @@ public class OceanGenerator : MonoBehaviour
                 }
 
                 Vector3[] centersOfNeighbors = new Vector3[desiredNeighbors];
-                // Vector3[] centersOfNeighbors = unsortedCenters;
 
                 int runs = 0;
 
@@ -365,12 +333,6 @@ public class OceanGenerator : MonoBehaviour
                                         closestDistanceOne = (unsortedCenters[s] - selectNeighbor).sqrMagnitude;
                                         closestNeighborOne = unsortedCenters[s];
                                     }
-
-                                    //if (Vector3.Distance(selectNeighbor, unsortedCenters[s]) < closestDistanceOne)
-                                    //{
-                                    //    closestDistanceOne = Vector3.Distance(selectNeighbor, unsortedCenters[s]);
-                                    //    closestNeighborOne = unsortedCenters[s];
-                                    //}
                                 }
                             }
 
@@ -385,12 +347,6 @@ public class OceanGenerator : MonoBehaviour
                                         closestDistanceTwo = (unsortedCenters[s] - selectNeighbor).sqrMagnitude;
                                         closestNeighborTwo = unsortedCenters[s];
                                     }
-
-                                    //if (Vector3.Distance(selectNeighbor, unsortedCenters[s]) < closestDistanceTwo)
-                                    //{
-                                    //    closestDistanceTwo = Vector3.Distance(selectNeighbor, unsortedCenters[s]);
-                                    //    closestNeighborTwo = unsortedCenters[s];
-                                    //}
                                 }
                             }
                         }
@@ -418,12 +374,6 @@ public class OceanGenerator : MonoBehaviour
                                     closestDistance = (unsortedCenters[s] - selectNeighbor).sqrMagnitude;
                                     closestNeighbor = unsortedCenters[s];
                                 }
-
-                                //if (Vector3.Distance(selectNeighbor, unsortedCenters[s]) < closestDistance)
-                                //{
-                                //    closestDistance = Vector3.Distance(selectNeighbor, unsortedCenters[s]);
-                                //    closestNeighbor = unsortedCenters[s];
-                                //}
                             }
                         }
                     }
@@ -431,9 +381,6 @@ public class OceanGenerator : MonoBehaviour
                     selectNeighbor = closestNeighbor;
                     runs++;
                 }
-
-                //float f = neighborsFound;
-                // Vector3[] centersOfNeighbors = unsortedCenters;
 
                 Vector3 hexCenter = new Vector3(0, 0, 0);
 
