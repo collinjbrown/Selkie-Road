@@ -375,8 +375,8 @@ MonoBehaviour:
   generatePlanet: 1
   hexes: 1
   subdivideDepth: 4
-  oceanDepth: 1.1
-  worldRadius: 40
+  oceanDepth: 1.05
+  worldRadius: 80
   hexChunkPrefab: {fileID: 1071003511907024834, guid: bd94ba70046e9ca42b0c6bc3c07c5bbb,
     type: 3}
   chunkMaterial: {fileID: 2100000, guid: ac5b5730d211f01418266a38e37e9337, type: 2}

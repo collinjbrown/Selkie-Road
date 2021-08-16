@@ -134,6 +134,11 @@ public class HexSphereGenerator : MonoBehaviour
         }
 
         planetGenerator.Generate();
+
+        foreach(HexChunk c in planetGenerator.chunks)
+        {
+            c.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        }
     }
 
     public void AddNoise()

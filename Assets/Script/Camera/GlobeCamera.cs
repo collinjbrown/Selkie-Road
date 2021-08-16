@@ -18,7 +18,7 @@ public class GlobeCamera : MonoBehaviour
 
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            this.gameObject.transform.position += Input.GetAxis("Mouse ScrollWheel") * this.gameObject.transform.position * Time.deltaTime;
+            this.gameObject.transform.position += Input.GetAxis("Mouse ScrollWheel") * this.gameObject.transform.position * Time.deltaTime * (speed / 100);
         }
     }
 }
