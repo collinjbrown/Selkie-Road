@@ -14,6 +14,8 @@ public class HexChunk : MonoBehaviour
     public Triangle[] triangles;
     public Hex[] hexes;
 
+    public Dictionary<Vector3, Hex> hexCenters;
+
     [HideInInspector]
     public Vector3[] mapVerts;
 
@@ -46,49 +48,24 @@ public class HexChunk : MonoBehaviour
         meshCol.sharedMesh.RecalculateBounds();
     }
 
-    Vector3 hA = new Vector3(0, 1.0f, 0);
-    Vector3 hB = new Vector3(Mathf.Sqrt(3 / 2), 0.5f, 0);
-    Vector3 hC = new Vector3(Mathf.Sqrt(3 / 2), -0.5f, 0);
-    Vector3 hD = new Vector3(0, -1.0f, 0);
-    Vector3 hE = new Vector3(-Mathf.Sqrt(3 / 2), -0.5f, 0);
-    Vector3 hF = new Vector3(-Mathf.Sqrt(3 / 2), 0.5f, 0);
-
-    //Vector3 hA = new Vector3(-1, 0, 0);
-    //Vector3 hB = new Vector3(-0.5f, Mathf.Sqrt(3 / 2), 0);
-    //Vector3 hC = new Vector3(0.5f, Mathf.Sqrt(3 / 2), 0);
-    //Vector3 hD = new Vector3(1f, 0, 0);
-    //Vector3 hE = new Vector3(0.5f, -Mathf.Sqrt(3 / 2), 0);
-    //Vector3 hF = new Vector3(-0.5f, -Mathf.Sqrt(3 / 2), 0);
-
-    Vector3 RelativeMovement(Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
-    {
-        return new Vector3((p.x * right.x) + (p.y * up.x) + (p.z * forward.x), (p.x * right.y) + (p.y * up.y) + (p.z * forward.y), (p.x * right.z) + (p.y * up.z) + (p.z * forward.z));
-    }
-
-    Vector3 YRotation(Vector3 p, float ang)
-    {
-        Vector3 xAxis = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang));
-        Vector3 yAxis = new Vector3(0, 1, 0);
-        Vector3 zAxis = new Vector3(-Mathf.Sin(ang), 0, Mathf.Cos(ang));
-
-        return RelativeMovement(p, zAxis, yAxis, xAxis);
-    }
-
-    public static Vector2 PerpendicularLine(Vector2 vector2)
-    {
-        return new Vector2(vector2.y, -vector2.x);
-    }
-
     public void Hexify(HexSphereGenerator hGen)
     {
-        hexes = new Hex[CountUniqueVerts(hGen.vertHexes)];
-        int hFound = 0;
+        // Converts triangles into hexes.
 
-        float hexWidth = (triangles[0].vA.pos - ((triangles[0].vA.pos + triangles[0].vB.pos + triangles[0].vC.pos) / 3.0f)).sqrMagnitude / 2.25f;
+        int mod = 0;
+
+        if (number == 0 || number == 19)
+        {
+            mod = 1;
+        }
+
+        hexCenters = new Dictionary<Vector3, Hex>();
+        hexes = new Hex[CountUniqueVerts(hGen.vertHexes) + mod];
+        int hFound = 0;
 
         for (int i = 0; i < triangles.Length; i++)
         {
-            Vertex v = triangles[i].vA;
+            Vertex v = triangles[i].vC;
 
             if (!hGen.vertHexes.ContainsKey(v.pos))
             {
@@ -97,103 +74,200 @@ public class HexChunk : MonoBehaviour
                 hGen.vertHexes.Add(v.pos, newHex);
                 newHex.vertices = new Vertex[6];
 
-                Vector3 forward = v.pos.normalized;
-
-                Vector3 up;
-
-                if (forward == Vector3.forward || forward == Vector3.right)
-                {
-                    up = Vector3.up;
-                }
-                else if (forward == Vector3.back || forward == Vector3.left)
-                {
-                    up = Vector3.down;
-                }
-                else if (forward == Vector3.down)
-                {
-                    up = Vector3.forward;
-                }
-                else if (forward == Vector3.up)
-                {
-                    up = Vector3.back;
-                }
-                else
-                {
-                    up = Vector3.Project(Vector3.up, forward);
-                    up -= Vector3.up;
-                    up = up.normalized;
-
-                    // up = Vector3.Cross(forward, Vector3.up);
-
-                    //float ang = Mathf.Atan(90 - Mathf.Abs(v.pos.x / v.pos.z));
-                    //Vector3 yPoint = YRotation(v.pos, ang);
-
-                    //Vector2 perp = PerpendicularLine(yPoint);
-                    //perp *= 2;
-
-                    //Vector3 p = YRotation(perp, -ang);
-
-                    //up = (v.pos - p).normalized;
-
-                    //if (v.pos.y > 0)
-                    //{
-                    //    up = -up;
-                    //}
-                }
-
-                //Vector3 up = -(v.pos - ((triangles[i].vA.pos + triangles[i].vB.pos + triangles[i].vC.pos) / 3.0f)).normalized;
-
-                //if (v.pos.y < ((triangles[i].vA.pos + triangles[i].vB.pos + triangles[i].vC.pos) / 3.0f).y)
-                //{
-                //    up = -up;
-                //}
-
-                Vector3 right = -Vector3.Cross(forward, up).normalized;
-
-
                 if (origin.vA.pos == v.pos || origin.vB.pos == v.pos || origin.vC.pos == v.pos)
                 {
+                    // Adds a pentagon to an "original" vertex.
+
                     newHex.pent = true;
                     newHex.vertices = new Vertex[5];
-                    newHex.vertices[0] = new Vertex((RelativeMovement(hA * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[1] = new Vertex((RelativeMovement(((hB + hC) / 2.0f) * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[2] = new Vertex((RelativeMovement(hD * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[3] = new Vertex((RelativeMovement(hE * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[4] = new Vertex((RelativeMovement(hF * hexWidth, forward, up, right)) + v.pos);
+
+                    Vertex[] vertsFound = FindVertices(hGen, v).ToArray();
+
+                    newHex.vertices[0] = vertsFound[0];
+                    newHex.vertices[1] = vertsFound[1];
+                    newHex.vertices[2] = vertsFound[2];
+                    newHex.vertices[3] = vertsFound[3];
+                    newHex.vertices[4] = vertsFound[4];
 
                     newHex.CalculateCenter();
                 }
                 else
                 {
+                    // Adds a hexagon over a vertex.
+
                     newHex.vertices = new Vertex[6];
-                    newHex.vertices[0] = new Vertex((RelativeMovement(hA * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[1] = new Vertex((RelativeMovement(hB * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[2] = new Vertex((RelativeMovement(hC * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[3] = new Vertex((RelativeMovement(hD * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[4] = new Vertex((RelativeMovement(hE * hexWidth, forward, up, right)) + v.pos);
-                    newHex.vertices[5] = new Vertex((RelativeMovement(hF * hexWidth, forward, up, right)) + v.pos);
+
+                    Vertex[] vertsFound = FindVertices(hGen, v).ToArray();
+
+                    newHex.vertices[0] = vertsFound[0];
+                    newHex.vertices[1] = vertsFound[1];
+                    newHex.vertices[2] = vertsFound[2];
+                    newHex.vertices[3] = vertsFound[3];
+                    newHex.vertices[4] = vertsFound[4];
+                    newHex.vertices[5] = vertsFound[5];
 
                     newHex.CalculateCenter();
                 }
 
+                hexCenters.Add(newHex.center.pos, newHex);
                 hexes[hFound] = newHex;
                 hFound++;
             }
-
         }
+
+        // Now we need to add the pole caps.
+        // We'll just add these to the first and last chunks.
+
+        if (number == 0)
+        {
+            Vertex v = new Vertex(new Vector3(0, hGen.worldRadius, 0));
+
+            Hex newHex = new Hex();
+            newHex.center = new Vertex(v.pos);
+            hGen.vertHexes.Add(v.pos, newHex);
+            newHex.vertices = new Vertex[6];
+
+            newHex.pent = true;
+            newHex.vertices = new Vertex[5];
+
+            Vertex[] vertsFound = FindVertices(hGen, v).ToArray();
+
+            newHex.vertices[0] = vertsFound[0];
+            newHex.vertices[1] = vertsFound[1];
+            newHex.vertices[2] = vertsFound[2];
+            newHex.vertices[3] = vertsFound[3];
+            newHex.vertices[4] = vertsFound[4];
+
+            newHex.CalculateCenter();
+
+            hexCenters.Add(newHex.center.pos, newHex);
+            hexes[hFound] = newHex;
+            hFound++;
+        }
+        else if (number == 19)
+        {
+            Vertex v = new Vertex(new Vector3(0, -hGen.worldRadius, 0));
+
+            Hex newHex = new Hex();
+            newHex.center = new Vertex(v.pos);
+            hGen.vertHexes.Add(v.pos, newHex);
+            newHex.vertices = new Vertex[6];
+
+            newHex.pent = true;
+            newHex.vertices = new Vertex[5];
+
+            Vertex[] vertsFound = FindVertices(hGen, v).ToArray();
+
+            newHex.vertices[0] = vertsFound[0];
+            newHex.vertices[1] = vertsFound[1];
+            newHex.vertices[2] = vertsFound[2];
+            newHex.vertices[3] = vertsFound[3];
+            newHex.vertices[4] = vertsFound[4];
+
+            newHex.CalculateCenter();
+
+            hexCenters.Add(newHex.center.pos, newHex);
+            hexes[hFound] = newHex;
+            hFound++;
+        }
+    }
+
+    public Vertex[] FindVertices(HexSphereGenerator hGen, Vertex p)
+    {
+        // Finds all the neighboring vertices where a hex's corners will go.
+
+        List<Triangle> triNeighbors = hGen.vecTriangleNeighbors[p.pos];
+        Vertex[] vertNeighbors = new Vertex[triNeighbors.Count];
+
+        for (int t = 0; t < triNeighbors.Count; t++)
+        {
+            Triangle tri = triNeighbors[t];
+
+            vertNeighbors[t] = new Vertex((tri.vA.pos + tri.vB.pos + tri.vC.pos) / 3.0f);
+        }
+
+        vertNeighbors = SortNeighbors(vertNeighbors, p);
+
+        return vertNeighbors;
+    }
+
+    public Vertex[] SortNeighbors(Vertex[] points, Vertex center)
+    {
+        // Sorts the vertices from "FindVertices" so that they are...
+        // clockwise relative to the exterior of the "sphere."
+
+        Vertex[] sortedNeighbors = new Vertex[6];
+        Vertex selectNeighbor = points.ToList()[Random.Range(0, points.Length)];
+        List<Vertex> checkedNeighbors = new List<Vertex>();
+
+        int run = 0;
+
+        while (run < points.Length)
+        {
+            sortedNeighbors[run] = selectNeighbor;
+            checkedNeighbors.Add(selectNeighbor);
+
+            Vertex closestNeighbor = null;
+            float closestDistance = Mathf.Infinity;
+
+            if (run == 0)
+            {
+                List<Vertex> closestNeighbors = new List<Vertex>();
+                closestNeighbors = points.OrderBy((q) => (q.pos - selectNeighbor.pos).sqrMagnitude).ToList();
+                closestNeighbors.Remove(selectNeighbor);
+
+                Vertex c1 = closestNeighbors[0];
+                Vertex c2 = closestNeighbors[1];
+
+
+                Vector3 crossN = Vector3.Cross((c2.pos - selectNeighbor.pos), (c1.pos - selectNeighbor.pos));
+                float w = Vector3.Dot(crossN, (selectNeighbor.pos - center.pos));
+
+                if (w > 0)
+                {
+                    closestNeighbor = c2;
+                }
+                else
+                {
+                    closestNeighbor = c1;
+                }
+            }
+            else
+            {
+                foreach (Vertex s in points)
+                {
+                    if (!checkedNeighbors.Contains(s))
+                    {
+                        if ((s.pos - selectNeighbor.pos).sqrMagnitude < closestDistance)
+                        {
+                            closestDistance = (s.pos - selectNeighbor.pos).sqrMagnitude;
+                            closestNeighbor = s;
+                        }
+                    }
+                }
+            }
+
+            run++;
+            selectNeighbor = closestNeighbor;
+        }
+
+        return sortedNeighbors;
+
     }
 
     int CountUniqueVerts(Dictionary<Vector3, Hex> checkedVerts)
     {
+        // Determines how many vertices, and thus hexes, the chunk will have.
+
         List<Vector3> uniqueVerts = new List<Vector3>();
 
         for (int i = 0; i < triangles.Length; i++)
         {
             Triangle t = triangles[i];
 
-            if (!uniqueVerts.Contains(t.vA.pos) && !checkedVerts.ContainsKey(t.vA.pos))
+            if (!uniqueVerts.Contains(t.vC.pos) && !checkedVerts.ContainsKey(t.vC.pos))
             {
-                uniqueVerts.Add(t.vA.pos);
+                uniqueVerts.Add(t.vC.pos);
             }
         }
 
@@ -450,5 +524,58 @@ public class HexChunk : MonoBehaviour
         }
 
         return new int[] { r, l, v };
+    }
+
+    public Vector3[] FindRelativeAxes(Vertex v)
+    {
+        Vector3 forward = v.pos.normalized;
+
+        Vector3 up;
+
+        if (forward == Vector3.forward || forward == Vector3.right)
+        {
+            up = Vector3.up;
+        }
+        else if (forward == Vector3.back || forward == Vector3.left)
+        {
+            up = Vector3.down;
+        }
+        else if (forward == Vector3.down)
+        {
+            up = Vector3.forward;
+        }
+        else if (forward == Vector3.up)
+        {
+            up = Vector3.back;
+        }
+        else
+        {
+            up = Vector3.Project(Vector3.up, forward);
+            up -= Vector3.up;
+            up = up.normalized;
+        }
+
+        Vector3 right = -Vector3.Cross(forward, up).normalized;
+
+        return new Vector3[] { forward, up, right };
+    }
+
+    Vector3 RelativeMovement(Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
+    {
+        return new Vector3((p.x * right.x) + (p.y * up.x) + (p.z * forward.x), (p.x * right.y) + (p.y * up.y) + (p.z * forward.y), (p.x * right.z) + (p.y * up.z) + (p.z * forward.z));
+    }
+
+    Vector3 YRotation(Vector3 p, float ang)
+    {
+        Vector3 xAxis = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang));
+        Vector3 yAxis = new Vector3(0, 1, 0);
+        Vector3 zAxis = new Vector3(-Mathf.Sin(ang), 0, Mathf.Cos(ang));
+
+        return RelativeMovement(p, zAxis, yAxis, xAxis);
+    }
+
+    public static Vector2 PerpendicularLine(Vector2 vector2)
+    {
+        return new Vector2(vector2.y, -vector2.x);
     }
 }

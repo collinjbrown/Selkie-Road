@@ -21,6 +21,9 @@ public class HexSphereGenerator : MonoBehaviour
     [HideInInspector]
     public Dictionary<Vector3, Hex> vertHexes;
 
+    [HideInInspector]
+    public Dictionary<Vector3, List<Triangle>> vecTriangleNeighbors;
+
     void Start()
     {
         // Starts the generation process (if that's something we want).
@@ -55,7 +58,8 @@ public class HexSphereGenerator : MonoBehaviour
             c.triangles[0] = new Triangle(new Vertex(icoVerts[icoTris[i]]), new Vertex(icoVerts[icoTris[i + 1]]), new Vertex(icoVerts[icoTris[i + 2]]));
             c.origin = c.triangles[0];
 
-            c.neighbors = c.FindNeighbors(chunks.Count);
+            // c.neighbors = c.FindNeighbors(chunks.Count);
+            // We no longer need to find neighbors, so this won't be necessary.
 
             c.number = chunks.Count;
             c.color = Random.ColorHSV();
@@ -73,8 +77,12 @@ public class HexSphereGenerator : MonoBehaviour
             }
         }
 
+
         if (hexes)
         {
+            // This should only ever be called right before making hexes.
+            FindNeighbors();
+
             foreach (HexChunk c in chunks)
             {
                 c.Hexify(this);
@@ -86,6 +94,58 @@ public class HexSphereGenerator : MonoBehaviour
             foreach (HexChunk c in chunks)
             {
                 c.Render(false);
+            }
+        }
+    }
+
+    public void FindNeighbors()
+    {
+        vecTriangleNeighbors = new Dictionary<Vector3, List<Triangle>>();
+
+        foreach (HexChunk c in chunks)
+        {
+            for (int i = 0; i < c.triangles.Length; i++)
+            {
+                Triangle t = c.triangles[i];
+
+                if (vecTriangleNeighbors.ContainsKey(t.vA.pos))
+                {
+                    if (!vecTriangleNeighbors[t.vA.pos].Contains(t))
+                    {
+                        vecTriangleNeighbors[t.vA.pos].Add(t);
+                    }
+                }
+                else
+                {
+                    vecTriangleNeighbors.Add(t.vA.pos, new List<Triangle>());
+                    vecTriangleNeighbors[t.vA.pos].Add(t);
+                }
+
+                if (vecTriangleNeighbors.ContainsKey(t.vB.pos))
+                {
+                    if (!vecTriangleNeighbors[t.vB.pos].Contains(t))
+                    {
+                        vecTriangleNeighbors[t.vB.pos].Add(t);
+                    }
+                }
+                else
+                {
+                    vecTriangleNeighbors.Add(t.vB.pos, new List<Triangle>());
+                    vecTriangleNeighbors[t.vB.pos].Add(t);
+                }
+
+                if (vecTriangleNeighbors.ContainsKey(t.vC.pos))
+                {
+                    if (!vecTriangleNeighbors[t.vC.pos].Contains(t))
+                    {
+                        vecTriangleNeighbors[t.vC.pos].Add(t);
+                    }
+                }
+                else
+                {
+                    vecTriangleNeighbors.Add(t.vC.pos, new List<Triangle>());
+                    vecTriangleNeighbors[t.vC.pos].Add(t);
+                }
             }
         }
     }
