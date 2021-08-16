@@ -7,13 +7,16 @@ using System.Linq;
 public class HexSphereGenerator : MonoBehaviour
 {
     public bool generate;
+    public bool generatePlanet;
     public bool hexes;
 
     public int subdivideDepth;
+    public float oceanDepth;
     public float worldRadius;
 
     public GameObject hexChunkPrefab;
     public Material chunkMaterial;
+    public GameObject planetPrefab;
 
     [HideInInspector]
     public List<HexChunk> chunks;
@@ -24,26 +27,41 @@ public class HexSphereGenerator : MonoBehaviour
     [HideInInspector]
     public Dictionary<Vector3, List<Triangle>> vecTriangleNeighbors;
 
+    public NoiseSettings noiseSettings;
+    NoiseFilter noiseFilter;
+
     void Start()
     {
         // Starts the generation process (if that's something we want).
 
-        Stopwatch st = new Stopwatch();
-        st.Start();
-
         if (generate)
         {
+            Stopwatch st = new Stopwatch();
+            st.Start();
+
             Generate();
+
+            st.Stop();
+            UnityEngine.Debug.Log($"Ocean generation took {st.ElapsedMilliseconds} milliseconds.");
         }
 
-        st.Stop();
-        UnityEngine.Debug.Log($"New world generation took {st.ElapsedMilliseconds} milliseconds.");
+        if (generatePlanet)
+        {
+            Stopwatch st = new Stopwatch();
+            st.Start();
+
+            GeneratePlanet();
+
+            st.Stop();
+            UnityEngine.Debug.Log($"Planet generation took {st.ElapsedMilliseconds} milliseconds.");
+        }
     }
 
     public void Generate()
     {
         // Generates the world.
         vertHexes = new Dictionary<Vector3, Hex>();
+        noiseFilter = new NoiseFilter(noiseSettings);
 
         for (int i = 0; i < icoTris.Length; i += 3)
         {
@@ -62,7 +80,7 @@ public class HexSphereGenerator : MonoBehaviour
             // We no longer need to find neighbors, so this won't be necessary.
 
             c.number = chunks.Count;
-            c.color = Random.ColorHSV();
+            c.color = Color.white;
 
             chunks.Add(c);
         }
@@ -77,7 +95,6 @@ public class HexSphereGenerator : MonoBehaviour
             }
         }
 
-
         if (hexes)
         {
             // This should only ever be called right before making hexes.
@@ -91,6 +108,11 @@ public class HexSphereGenerator : MonoBehaviour
         }
         else
         {
+            if (noiseSettings.amplitude != 0 && noiseSettings.period != 0)
+            {
+                AddNoise();
+            }
+
             foreach (HexChunk c in chunks)
             {
                 c.Render(false);
@@ -98,8 +120,39 @@ public class HexSphereGenerator : MonoBehaviour
         }
     }
 
+    public void GeneratePlanet()
+    {
+        GameObject g = Instantiate(planetPrefab, this.gameObject.transform.position, Quaternion.identity, this.transform);
+
+        HexSphereGenerator planetGenerator = g.GetComponent<HexSphereGenerator>();
+
+        planetGenerator.worldRadius = worldRadius * oceanDepth;
+
+        if (!planetGenerator.hexes)
+        {
+            planetGenerator.noiseSettings = noiseSettings;
+        }
+
+        planetGenerator.Generate();
+    }
+
+    public void AddNoise()
+    {
+        foreach (HexChunk c in chunks)
+        {
+            for (int i = 0; i < c.vertices.Length; i++)
+            {
+                float elevation = noiseFilter.Evaluate(c.vertices[i].pos);
+                Vector3 normal = (this.transform.position - c.vertices[i].pos).normalized;
+                c.vertices[i].pos += normal * elevation;
+            }
+        }
+    }
+
     public void FindNeighbors()
     {
+        // Finds all the neighbors to a vertex (for making hexes, afterwards).
+
         vecTriangleNeighbors = new Dictionary<Vector3, List<Triangle>>();
 
         foreach (HexChunk c in chunks)

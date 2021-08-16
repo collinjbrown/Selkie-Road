@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5788319097987877287}
-  - component: {fileID: 5788319097987877286}
+  - component: {fileID: -4205957125075936326}
   m_Layer: 0
   m_Name: Planet
   m_TagString: Untagged
@@ -31,7 +31,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5788319097987877286
+--- !u!114 &-4205957125075936326
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -40,14 +40,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5788319097987877284}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b11a3659e2bad6498c5f2c5faafc06a, type: 3}
+  m_Script: {fileID: 11500000, guid: 9e322a9980bbc424d88cda0208a61ea3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  core: {x: 0, y: 0, z: 0}
-  divideDepth: 5
-  worldRadius: 80
-  noiseScale: 0.9
-  chunkPrefab: {fileID: 1876215773675517452, guid: 48927058332cf4c4493b81a84fad98bd,
+  generate: 0
+  hexes: 0
+  subdivideDepth: 6
+  worldRadius: 0
+  hexChunkPrefab: {fileID: 1071003511907024834, guid: bd94ba70046e9ca42b0c6bc3c07c5bbb,
     type: 3}
-  chunks: []
   chunkMaterial: {fileID: 2100000, guid: 0935f7d31a9c8e541bf326d629ff8081, type: 2}
+  chunks: []
