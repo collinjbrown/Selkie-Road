@@ -29,6 +29,9 @@ public class OceanGenerator : MonoBehaviour
 
     void Start()
     {
+        Stopwatch st = new Stopwatch();
+        st.Start();
+
         core = this.gameObject.transform.position;
         origins = new List<Vector3>();
 
@@ -93,12 +96,13 @@ public class OceanGenerator : MonoBehaviour
         }
 
         Generate();
+
+        st.Stop();
+        UnityEngine.Debug.Log($"Ocean Generation took {st.ElapsedMilliseconds} milliseconds to run.");
     }
 
     void Generate()
     {
-        Stopwatch st = new Stopwatch();
-        st.Start();
 
         // Subdivide
         int d = divideDepth;
@@ -146,7 +150,7 @@ public class OceanGenerator : MonoBehaviour
             foreach (Chunk c in chunks)
             {
                 float h = (c.triVerts[0] - c.triVerts[1]).sqrMagnitude / 2.0f;
-                GenerateHexes(c, h);
+                OldGenerateHexes(c, h);
             }
 
             foreach (Chunk c in chunks)
@@ -164,9 +168,6 @@ public class OceanGenerator : MonoBehaviour
 
         // Create the basic land beneath the ocean.
         // CreateLand();
-
-        st.Stop();
-        UnityEngine.Debug.Log($"Ocean Generation took {st.ElapsedMilliseconds} milliseconds to run.");
     }
 
     public void CreateLand()
@@ -235,13 +236,17 @@ public class OceanGenerator : MonoBehaviour
         chunk.triTris = newTris;
     }
 
+
+
+
+
     Vector3 hA = new Vector3(-1, 0, 1);
     Vector3 hB = new Vector3(-0.5f, Mathf.Sqrt(3 / 2), 1);
     Vector3 hC = new Vector3(0.5f, Mathf.Sqrt(3 / 2), 1);
     Vector3 hD = new Vector3(1f, 0, 1);
     Vector3 hE = new Vector3(0.5f, -Mathf.Sqrt(3 / 2), 1);
     Vector3 hF = new Vector3(-0.5f, -Mathf.Sqrt(3 / 2), 1);
-    public void GenerateHexes(Chunk chunk, float hexWidth)
+    public void OldGenerateHexes(Chunk chunk, float hexWidth)
     {
         Vector3[] oldVerts = chunk.triVerts;
 
@@ -419,7 +424,7 @@ public class OceanGenerator : MonoBehaviour
                     newTris[(i * 36) + 1 + triOffset] = (i * 13) + 3 + vertOffset;
                     newTris[(i * 36) + 2 + triOffset] = (i * 13) + 1 + vertOffset;
 
-                    // Triangle Two (A - BC - C)
+                    // Triangle Two (A - C - BC)
                     newTris[(i * 36) + 3 + triOffset] = (i * 13) + 0 + vertOffset;
                     newTris[(i * 36) + 4 + triOffset] = (i * 13) + 2 + vertOffset;
                     newTris[(i * 36) + 5 + triOffset] = (i * 13) + 3 + vertOffset;
@@ -429,7 +434,7 @@ public class OceanGenerator : MonoBehaviour
                     newTris[(i * 36) + 7 + triOffset] = (i * 13) + 5 + vertOffset;
                     newTris[(i * 36) + 8 + triOffset] = (i * 13) + 2 + vertOffset;
 
-                    // Triangle Four (A - CD - D)
+                    // Triangle Four (A - D - CD)
                     newTris[(i * 36) + 9 + triOffset] = (i * 13) + 0 + vertOffset;
                     newTris[(i * 36) + 10 + triOffset] = (i * 13) + 4 + vertOffset;
                     newTris[(i * 36) + 11 + triOffset] = (i * 13) + 5 + vertOffset;
@@ -439,7 +444,7 @@ public class OceanGenerator : MonoBehaviour
                     newTris[(i * 36) + 13 + triOffset] = (i * 13) + 7 + vertOffset;
                     newTris[(i * 36) + 14 + triOffset] = (i * 13) + 4 + vertOffset;
 
-                    // Triangle Six (A - DE - E)
+                    // Triangle Six (A - E - DE)
                     newTris[(i * 36) + 15 + triOffset] = (i * 13) + 0 + vertOffset;
                     newTris[(i * 36) + 16 + triOffset] = (i * 13) + 6 + vertOffset;
                     newTris[(i * 36) + 17 + triOffset] = (i * 13) + 7 + vertOffset;
@@ -449,7 +454,7 @@ public class OceanGenerator : MonoBehaviour
                     newTris[(i * 36) + 19 + triOffset] = (i * 13) + 9 + vertOffset;
                     newTris[(i * 36) + 20 + triOffset] = (i * 13) + 6 + vertOffset;
 
-                    // Triangle Eight (A - EF - F)
+                    // Triangle Eight (A - F - EF)
                     newTris[(i * 36) + 21 + triOffset] = (i * 13) + 0 + vertOffset;
                     newTris[(i * 36) + 22 + triOffset] = (i * 13) + 8 + vertOffset;
                     newTris[(i * 36) + 23 + triOffset] = (i * 13) + 9 + vertOffset;
@@ -459,7 +464,7 @@ public class OceanGenerator : MonoBehaviour
                     newTris[(i * 36) + 25 + triOffset] = (i * 13) + 11 + vertOffset;
                     newTris[(i * 36) + 26 + triOffset] = (i * 13) + 8 + vertOffset;
 
-                    // Triangle Ten (A - FG - G)
+                    // Triangle Ten (A - G - FG)
                     newTris[(i * 36) + 27 + triOffset] = (i * 13) + 0 + vertOffset;
                     newTris[(i * 36) + 28 + triOffset] = (i * 13) + 10 + vertOffset;
                     newTris[(i * 36) + 29 + triOffset] = (i * 13) + 11 + vertOffset;
@@ -469,7 +474,7 @@ public class OceanGenerator : MonoBehaviour
                     newTris[(i * 36) + 31 + triOffset] = (i * 13) + 12 + vertOffset;
                     newTris[(i * 36) + 32 + triOffset] = (i * 13) + 10 + vertOffset;
 
-                    // Triangle Twelve (A - GB - B)
+                    // Triangle Twelve (A - B - GB)
                     newTris[(i * 36) + 33 + triOffset] = (i * 13) + 0 + vertOffset;
                     newTris[(i * 36) + 34 + triOffset] = (i * 13) + 1 + vertOffset;
                     newTris[(i * 36) + 35 + triOffset] = (i * 13) + 12 + vertOffset;
@@ -558,12 +563,12 @@ public class OceanGenerator : MonoBehaviour
         chunk.hexTris = newTris;
     }
 
-    Vector3 RelativeMovement (Vector3 origin, Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
+    Vector3 RelativeMovement(Vector3 origin, Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
     {
         return new Vector3(p.x * right.x + p.y * up.x + p.z * forward.x + origin.x, p.x * right.y + p.y * up.y + p.z * forward.y + origin.y, p.x * forward.z + p.y * up.z + p.z * forward.z + origin.z);
     }
 
-    
+
     public void CountVertsAndTris()
     {
         int cV = 0;
@@ -627,7 +632,7 @@ public class OceanGenerator : MonoBehaviour
     Vector3[] icoVerts = new Vector3[] // 12
     {
         new Vector3 (0,
-            t, 
+            t,
             0),
         new Vector3 (r * Mathf.Cos(0),
             t * q,
@@ -688,4 +693,5 @@ public class OceanGenerator : MonoBehaviour
         11,9,10,
         11,10,6 // 20
     };
+
 }

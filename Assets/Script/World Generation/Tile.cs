@@ -6,8 +6,3 @@ public class Tile
 {
     Vector3[] vertices;
 }
-
-public class TileVert
-{
-    public int[] neighborsTriangles;
-}
