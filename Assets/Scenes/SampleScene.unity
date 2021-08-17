@@ -251,7 +251,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -371,11 +371,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e322a9980bbc424d88cda0208a61ea3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isPlanet: 0
   generate: 1
   generatePlanet: 1
   hexes: 1
   subdivideDepth: 4
-  oceanDepth: 1.05
+  oceanDepth: 0.9
   worldRadius: 80
   hexChunkPrefab: {fileID: 1071003511907024834, guid: bd94ba70046e9ca42b0c6bc3c07c5bbb,
     type: 3}
@@ -384,9 +385,17 @@ MonoBehaviour:
     type: 3}
   chunks: []
   noiseSettings:
-    amplitude: 10
-    period: 0.05
+    seed: 0
+    strength: 10
+    numLayers: 5
+    baseRoughness: 0.05
+    roughness: 0.5
+    persistence: 0.66
     center: {x: 0, y: 0, z: 0}
+    minValue: 1
+    maxValue: 3
+  maxContDist: 0
+  oceanRadius: 0
 --- !u!4 &1638805056
 Transform:
   m_ObjectHideFlags: 0

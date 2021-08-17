@@ -6,6 +6,8 @@ using System.Linq;
 
 public class HexSphereGenerator : MonoBehaviour
 {
+    public bool isPlanet;
+
     public bool generate;
     public bool generatePlanet;
     public bool hexes;
@@ -30,31 +32,43 @@ public class HexSphereGenerator : MonoBehaviour
     public NoiseSettings noiseSettings;
     NoiseFilter noiseFilter;
 
+    [HideInInspector]
+    public float maxContDist;
+
+    [HideInInspector]
+    public float oceanRadius;
+
+
     void Start()
     {
         // Starts the generation process (if that's something we want).
+        Stopwatch st = new Stopwatch();
+        st.Start();
 
         if (generate)
         {
-            Stopwatch st = new Stopwatch();
-            st.Start();
+            Stopwatch gt = new Stopwatch();
+            gt.Start();
 
             Generate();
 
-            st.Stop();
-            UnityEngine.Debug.Log($"Ocean generation took {st.ElapsedMilliseconds} milliseconds.");
+            gt.Stop();
+            UnityEngine.Debug.Log($"Ocean generation took {gt.ElapsedMilliseconds} milliseconds.");
         }
 
         if (generatePlanet)
         {
-            Stopwatch st = new Stopwatch();
-            st.Start();
+            Stopwatch pt = new Stopwatch();
+            pt.Start();
 
             GeneratePlanet();
 
-            st.Stop();
-            UnityEngine.Debug.Log($"Planet generation took {st.ElapsedMilliseconds} milliseconds.");
+            pt.Stop();
+            UnityEngine.Debug.Log($"Planet generation took {pt.ElapsedMilliseconds} milliseconds.");
         }
+
+        st.Stop();
+        UnityEngine.Debug.Log($"Total world generation took {st.ElapsedMilliseconds} milliseconds.");
     }
 
     public void Generate()
@@ -80,7 +94,7 @@ public class HexSphereGenerator : MonoBehaviour
             // We no longer need to find neighbors, so this won't be necessary.
 
             c.number = chunks.Count;
-            c.color = Color.white;
+            c.color = Color.Lerp(Color.Lerp(Color.red, Color.yellow, 0.5f), Color.green, 0.25f);
 
             chunks.Add(c);
         }
@@ -108,14 +122,26 @@ public class HexSphereGenerator : MonoBehaviour
         }
         else
         {
-            if (noiseSettings.amplitude != 0 && noiseSettings.period != 0)
+            if (isPlanet)
             {
-                AddNoise();
-            }
+                // I think the problem is in the effect noise has on the neighbor dictionary.
+                // AddNoise();
+                FindNeighbors();
 
-            foreach (HexChunk c in chunks)
+                foreach (HexChunk c in chunks)
+                {
+                    c.Hexify(this);
+                    c.AddHexNoise(noiseFilter, this);
+
+                    c.Render(true);
+                }
+            }
+            else
             {
-                c.Render(false);
+                foreach (HexChunk c in chunks)
+                {
+                    c.Render(false);
+                }
             }
         }
     }
@@ -133,24 +159,15 @@ public class HexSphereGenerator : MonoBehaviour
             planetGenerator.noiseSettings = noiseSettings;
         }
 
+        planetGenerator.isPlanet = true;
+        planetGenerator.maxContDist = maxContDist;
+        planetGenerator.oceanRadius = worldRadius;
+
         planetGenerator.Generate();
 
         foreach(HexChunk c in planetGenerator.chunks)
         {
             c.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-        }
-    }
-
-    public void AddNoise()
-    {
-        foreach (HexChunk c in chunks)
-        {
-            for (int i = 0; i < c.vertices.Length; i++)
-            {
-                float elevation = noiseFilter.Evaluate(c.vertices[i].pos);
-                Vector3 normal = (this.transform.position - c.vertices[i].pos).normalized;
-                c.vertices[i].pos += normal * elevation;
-            }
         }
     }
 
@@ -281,7 +298,6 @@ public class HexSphereGenerator : MonoBehaviour
 public class Vertex
 {
     public Vector3 pos;
-    public List<Vertex> neighbors;
 
     public Vertex (Vector3 v)
     {

@@ -43,11 +43,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e322a9980bbc424d88cda0208a61ea3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isPlanet: 0
   generate: 0
+  generatePlanet: 0
   hexes: 0
-  subdivideDepth: 6
+  subdivideDepth: 4
+  oceanDepth: 0
   worldRadius: 0
   hexChunkPrefab: {fileID: 1071003511907024834, guid: bd94ba70046e9ca42b0c6bc3c07c5bbb,
     type: 3}
   chunkMaterial: {fileID: 2100000, guid: 0935f7d31a9c8e541bf326d629ff8081, type: 2}
+  planetPrefab: {fileID: 0}
   chunks: []
+  noiseSettings:
+    seed: 0
+    strength: 1
+    numLayers: 1
+    baseRoughness: 1
+    roughness: 2
+    persistence: 0.5
+    center: {x: 0, y: 0, z: 0}
+    minValue: 0
+    maxValue: 0
+  maxContDist: 0
+  oceanRadius: 0

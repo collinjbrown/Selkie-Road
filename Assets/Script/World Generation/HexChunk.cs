@@ -22,6 +22,12 @@ public class HexChunk : MonoBehaviour
     [HideInInspector]
     public int[] mapTris;
 
+    [HideInInspector]
+    public Vector3[] wallVerts;
+
+    [HideInInspector]
+    public int[] wallTris;
+
     public Color color;
 
     public Triangle origin;
@@ -29,7 +35,6 @@ public class HexChunk : MonoBehaviour
     public void Render(bool hex)
     {
         // Displays the chunk in the world.
-
         MapVertsAndTris(hex);
 
         Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
@@ -115,6 +120,8 @@ public class HexChunk : MonoBehaviour
             }
         }
 
+        hGen.maxContDist = (hexes[0].vertices[0].pos - hexes[0].vertices[1].pos).sqrMagnitude;
+
         // Now we need to add the pole caps.
         // We'll just add these to the first and last chunks.
 
@@ -170,6 +177,74 @@ public class HexChunk : MonoBehaviour
             hexes[hFound] = newHex;
             hFound++;
         }
+    }
+
+    public void AddHexNoise(NoiseFilter noiseFilter, HexSphereGenerator hGen)
+    {
+        List<Vector3> wallVertsList = new List<Vector3>();
+        List<int> wallTrisList = new List<int>();
+
+        for (int x = 0; x < hexes.Length; x++)
+        {
+            Hex hex = hexes[x];
+
+            float elevation = noiseFilter.Evaluate(hex.center.pos);
+            Vector3 normal = (hex.center.pos - hGen.gameObject.transform.position).normalized;
+
+            int intElev = Mathf.RoundToInt(elevation);
+
+            //if (intElev % 2 != 0)
+            //{
+            //    intElev += 1;
+            //}
+
+            hex.center.pos += normal * intElev;
+
+            for (int i = 0; i < hex.vertices.Length; i++)
+            {
+                Vertex v = hex.vertices[i];
+
+                if (i != hex.vertices.Length - 1)
+                {
+                    wallVertsList.Add(v.pos);
+
+                    wallTrisList.Add(wallVertsList.Count - 1);
+                    wallTrisList.Add(wallVertsList.Count + 0);
+                    wallTrisList.Add(wallVertsList.Count + 1);
+
+                    wallTrisList.Add(wallVertsList.Count + 1);
+                    wallTrisList.Add(wallVertsList.Count + 0);
+                    wallTrisList.Add(wallVertsList.Count + 2);
+                }
+                else
+                {
+                    int pentMod = 0;
+
+                    if (hex.pent)
+                    {
+                        pentMod = 2;
+                    }
+
+                    wallVertsList.Add(v.pos);
+
+                    wallTrisList.Add(wallVertsList.Count - 1);
+                    wallTrisList.Add(wallVertsList.Count + 0);
+                    wallTrisList.Add(wallVertsList.Count - 11 + pentMod);
+
+                    wallTrisList.Add(wallVertsList.Count - 11 + pentMod);
+                    wallTrisList.Add(wallVertsList.Count + 0);
+                    wallTrisList.Add(wallVertsList.Count - 10 + pentMod);
+                }
+
+                normal = (v.pos - hGen.gameObject.transform.position).normalized;
+                v.pos += normal * intElev;
+
+                wallVertsList.Add(v.pos);
+            }
+        }
+
+        wallVerts = wallVertsList.ToArray();
+        wallTris = wallTrisList.ToArray();
     }
 
     public Vertex[] FindVertices(HexSphereGenerator hGen, Vertex p)
@@ -351,8 +426,18 @@ public class HexChunk : MonoBehaviour
         }
         else
         {
-            mapVerts = new Vector3[hexes.Length * (12 + 1)];
-            mapTris = new int[hexes.Length * (12 * 3)];
+
+            int vMod = 0;
+            int tMod = 0;
+
+            if (wallVerts.Length > 0)
+            {
+                vMod = wallVerts.Length;
+                tMod = wallTris.Length;
+            }
+
+            mapVerts = new Vector3[(hexes.Length * (12 + 1)) + vMod];
+            mapTris = new int[(hexes.Length * (12 * 3)) + tMod];
 
             int vertOffset = 0; // Used to make sure there aren't gaps in the tri array due to pentagons.
             int triOffset = 0;
@@ -459,6 +544,22 @@ public class HexChunk : MonoBehaviour
                     vertOffset = -2;
                     triOffset = -6;
                 }
+            }
+
+            vMod = hexes.Length * (12 + 1);
+            tMod = hexes.Length * (12 * 3);
+
+            // Add the wall verts.
+            for (int i = 0; i < wallVerts.Length; i++)
+            {
+                mapVerts[i + vMod] = wallVerts[i];
+            }
+
+            // Add the wall tris.
+            for (int i = 0; i < wallTris.Length; i++)
+            {
+                wallTris[i] += vMod;
+                mapTris[i + tMod] = wallTris[i];
             }
         }
     }
