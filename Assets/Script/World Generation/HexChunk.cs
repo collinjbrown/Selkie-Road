@@ -23,6 +23,9 @@ public class HexChunk : MonoBehaviour
     public int[] mapTris;
 
     [HideInInspector]
+    public Color[] mapColors;
+
+    [HideInInspector]
     public Vector3[] wallVerts;
 
     [HideInInspector]
@@ -32,25 +35,64 @@ public class HexChunk : MonoBehaviour
 
     public Triangle origin;
 
+    List<MeshCollider> meshColliders = new List<MeshCollider>();
+
     public void Render(bool hex)
     {
         // Displays the chunk in the world.
+        foreach (MeshCollider m in meshColliders)
+        {
+            Destroy(m);
+        }
+
+        meshColliders = new List<MeshCollider>();
         MapVertsAndTris(hex);
 
         Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
-        this.gameObject.GetComponent<MeshRenderer>().material.color = color;
+        // this.gameObject.GetComponent<MeshRenderer>().material.color = color;
 
         mesh.Clear();
         mesh.vertices = mapVerts;
         mesh.triangles = mapTris;
+
+        if (hex)
+        {
+            mesh.colors = mapColors;
+        }
+
         mesh.Optimize();
         mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+
 
         MeshCollider meshCol = this.gameObject.GetComponent<MeshCollider>();
-        meshCol.sharedMesh = new Mesh();
-        meshCol.sharedMesh.vertices = mapVerts;
-        meshCol.sharedMesh.triangles = mapTris;
-        meshCol.sharedMesh.RecalculateBounds();
+        meshCol.sharedMesh = mesh;
+
+        // I don't know how to get convex colliders working, so we'll leave this for now...
+        // and simply find other ways to do what I want to do.
+
+        //int polygonLimit = (255) * 3;
+
+        //for (int i = 0; i < mapTris.Length; i += polygonLimit)
+        //{
+        //    MeshCollider meshCol = this.gameObject.AddComponent<MeshCollider>();
+        //    meshCol.sharedMesh = new Mesh();
+        //    meshCol.convex = true;
+        //    meshColliders.Add(meshCol);
+        //    meshCol.sharedMesh.vertices = mapVerts;
+
+        //    int takeAmount = polygonLimit;
+        //    if (i + takeAmount > mapTris.Length)
+        //    {
+        //        takeAmount = (i + takeAmount) - mapTris.Length;
+        //    }
+
+        //    meshCol.sharedMesh.triangles = mapTris.Skip(i).Take(takeAmount).ToArray();
+        //    Debug.Log($"{meshCol.sharedMesh.triangles.Length / 3}");
+
+        //    meshCol.sharedMesh.RecalculateBounds();
+        //    meshCol.sharedMesh.RecalculateNormals();
+        //}
     }
 
     public void Hexify(HexSphereGenerator hGen)
@@ -76,6 +118,9 @@ public class HexChunk : MonoBehaviour
             {
                 Hex newHex = new Hex();
                 newHex.center = new Vertex(v.pos);
+                newHex.color = Random.ColorHSV();
+                newHex.x = v.x;
+                newHex.y = v.y;
                 hGen.vertHexes.Add(v.pos, newHex);
                 newHex.vertices = new Vertex[6];
 
@@ -116,6 +161,7 @@ public class HexChunk : MonoBehaviour
 
                 hexCenters.Add(newHex.center.pos, newHex);
                 hexes[hFound] = newHex;
+                hGen.unsortedHexes.Add(newHex);
                 hFound++;
             }
         }
@@ -149,7 +195,8 @@ public class HexChunk : MonoBehaviour
 
             hexCenters.Add(newHex.center.pos, newHex);
             hexes[hFound] = newHex;
-            hFound++;
+            hGen.unsortedHexes.Add(newHex);
+            // hFound++;
         }
         else if (number == 19)
         {
@@ -175,8 +222,28 @@ public class HexChunk : MonoBehaviour
 
             hexCenters.Add(newHex.center.pos, newHex);
             hexes[hFound] = newHex;
-            hFound++;
+            hGen.unsortedHexes.Add(newHex);
+            // hFound++;
         }
+    }
+
+    public Hex ListNearestHex(Vector3 worldSpace)
+    {
+        Hex closestHex = null;
+        float closestDistance = Mathf.Infinity;
+        
+        for (int i = 0; i < hexes.Length; i++)
+        {
+            Hex h = hexes[i];
+
+            if ((h.center.pos - worldSpace).sqrMagnitude < closestDistance)
+            {
+                closestDistance = (h.center.pos - worldSpace).sqrMagnitude;
+                closestHex = h;
+            }
+        }
+
+        return closestHex;
     }
 
     public void AddHexNoise(NoiseFilter noiseFilter, HexSphereGenerator hGen)
@@ -193,10 +260,10 @@ public class HexChunk : MonoBehaviour
 
             int intElev = Mathf.RoundToInt(elevation);
 
-            //if (intElev % 2 != 0)
-            //{
-            //    intElev += 1;
-            //}
+            if (intElev % 2 != 0)
+            {
+                intElev += 1;
+            }
 
             hex.center.pos += normal * intElev;
 
@@ -360,12 +427,37 @@ public class HexChunk : MonoBehaviour
         {
             Triangle oldTri = triangles[i];
 
+            int flipMod = 1;
+
+            if (oldTri.vB.pos.y < (oldTri.vA.pos.y + oldTri.vC.pos.y) / 2.0f)
+            {
+                flipMod = -1;
+            }
+
             Vertex a = new Vertex(oldTri.vA.pos);
+            a.x = oldTri.vA.x;
+            a.y = oldTri.vA.y;
+
             Vertex ab = new Vertex((oldTri.vA.pos + oldTri.vB.pos) / 2.0f);
+            ab.x = oldTri.vB.x;
+            ab.y = oldTri.vB.y;
+
             Vertex b = new Vertex(oldTri.vB.pos);
+            b.x = oldTri.vB.x + 1;
+            b.y = oldTri.vB.y + flipMod;
+
             Vertex bc = new Vertex((oldTri.vB.pos + oldTri.vC.pos) / 2.0f);
+            bc.x = oldTri.vC.x;
+            bc.y = oldTri.vC.y + flipMod;
+
             Vertex c = new Vertex(oldTri.vC.pos);
+            c.x = oldTri.vC.x + 1;
+            c.y = oldTri.vC.y;
+
             Vertex ca = new Vertex((oldTri.vC.pos + oldTri.vA.pos) / 2.0f);
+            ca.x = oldTri.vC.x;
+            ca.y = oldTri.vC.y;
+
 
             Triangle aabca = new Triangle(a, ab, ca);
             aabca.NormalizeVertices(radius);
@@ -438,6 +530,7 @@ public class HexChunk : MonoBehaviour
 
             mapVerts = new Vector3[(hexes.Length * (12 + 1)) + vMod];
             mapTris = new int[(hexes.Length * (12 * 3)) + tMod];
+            mapColors = new Color[mapVerts.Length];
 
             int vertOffset = 0; // Used to make sure there aren't gaps in the tri array due to pentagons.
             int triOffset = 0;
@@ -456,6 +549,17 @@ public class HexChunk : MonoBehaviour
                 mapVerts[(t * 13) + 7 + vertOffset] = (h.vertices[2].pos + h.vertices[3].pos) / 2.0f;  // DE
                 mapVerts[(t * 13) + 8 + vertOffset] = h.vertices[4].pos;                                // F
                 mapVerts[(t * 13) + 9 + vertOffset] = (h.vertices[3].pos + h.vertices[4].pos) / 2.0f;  // EF
+
+                mapColors[(t * 13) + 0 + vertOffset] = h.color;
+                mapColors[(t * 13) + 1 + vertOffset] = h.color;
+                mapColors[(t * 13) + 2 + vertOffset] = h.color;
+                mapColors[(t * 13) + 3 + vertOffset] = h.color;
+                mapColors[(t * 13) + 4 + vertOffset] = h.color;
+                mapColors[(t * 13) + 5 + vertOffset] = h.color;
+                mapColors[(t * 13) + 6 + vertOffset] = h.color;
+                mapColors[(t * 13) + 7 + vertOffset] = h.color;
+                mapColors[(t * 13) + 8 + vertOffset] = h.color;
+                mapColors[(t * 13) + 9 + vertOffset] = h.color;
 
                 // Triangle One (A - BC - B)
                 mapTris[(t * 36) + 0 + triOffset] = (t * 13) + 0 + vertOffset;
@@ -504,6 +608,10 @@ public class HexChunk : MonoBehaviour
                     mapVerts[(t * 13) + 11 + vertOffset] = (h.vertices[4].pos + h.vertices[5].pos) / 2.0f;  // FG
                     mapVerts[(t * 13) + 12 + vertOffset] = (h.vertices[5].pos + h.vertices[0].pos) / 2.0f;  // GB
 
+                    mapColors[(t * 13) + 10 + vertOffset] = h.color;
+                    mapColors[(t * 13) + 11 + vertOffset] = h.color;
+                    mapColors[(t * 13) + 12 + vertOffset] = h.color;
+
                     // Triangle Nine (A - FG - F)
                     mapTris[(t * 36) + 24 + triOffset] = (t * 13) + 0 + vertOffset;
                     mapTris[(t * 36) + 25 + triOffset] = (t * 13) + 11 + vertOffset;
@@ -530,6 +638,8 @@ public class HexChunk : MonoBehaviour
                 else
                 {
                     mapVerts[(t * 13) + 10 + vertOffset] = (h.vertices[4].pos + h.vertices[0].pos) / 2.0f;  // FB
+
+                    mapColors[(t * 13) + 10 + vertOffset] = h.color;
 
                     // Triangle Nine (A - FB - F)
                     mapTris[(t * 36) + 24 + triOffset] = (t * 13) + 0 + vertOffset;

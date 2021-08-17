@@ -21,6 +21,10 @@ public class HexSphereGenerator : MonoBehaviour
     public GameObject planetPrefab;
 
     [HideInInspector]
+    public List<Hex> unsortedHexes;
+    public Hex[,] map;
+
+    [HideInInspector]
     public List<HexChunk> chunks;
 
     [HideInInspector]
@@ -76,6 +80,7 @@ public class HexSphereGenerator : MonoBehaviour
         // Generates the world.
         vertHexes = new Dictionary<Vector3, Hex>();
         noiseFilter = new NoiseFilter(noiseSettings);
+        unsortedHexes = new List<Hex>();
 
         for (int i = 0; i < icoTris.Length; i += 3)
         {
@@ -88,6 +93,18 @@ public class HexSphereGenerator : MonoBehaviour
 
             c.triangles = new Triangle[1];
             c.triangles[0] = new Triangle(new Vertex(icoVerts[icoTris[i]]), new Vertex(icoVerts[icoTris[i + 1]]), new Vertex(icoVerts[icoTris[i + 2]]));
+
+            int[] initCoords = FindInitialCoordinates(chunks.Count);
+
+            c.triangles[0].vA.x = initCoords[0];
+            c.triangles[0].vA.y = initCoords[1];
+
+            c.triangles[0].vB.x = initCoords[0];
+            c.triangles[0].vB.y = initCoords[1] + 1;
+
+            c.triangles[0].vC.x = initCoords[0] + 1;
+            c.triangles[0].vC.y = initCoords[1];
+
             c.origin = c.triangles[0];
 
             // c.neighbors = c.FindNeighbors(chunks.Count);
@@ -95,6 +112,11 @@ public class HexSphereGenerator : MonoBehaviour
 
             c.number = chunks.Count;
             c.color = Color.Lerp(Color.Lerp(Color.red, Color.yellow, 0.5f), Color.green, 0.25f);
+
+            if (!isPlanet)
+            {
+                c.gameObject.GetComponent<MeshCollider>().enabled = false;
+            }
 
             chunks.Add(c);
         }
@@ -119,6 +141,8 @@ public class HexSphereGenerator : MonoBehaviour
                 c.Hexify(this);
                 c.Render(true);
             }
+
+            CoordinateHexes();
         }
         else
         {
@@ -135,6 +159,8 @@ public class HexSphereGenerator : MonoBehaviour
 
                     c.Render(true);
                 }
+
+                CoordinateHexes();
             }
             else
             {
@@ -168,6 +194,35 @@ public class HexSphereGenerator : MonoBehaviour
         foreach(HexChunk c in planetGenerator.chunks)
         {
             c.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        }
+    }
+
+    public void CoordinateHexes()
+    {
+        // Takes the unsorted hexes' coordinates and puts them...
+        // in the map array for safe keeping.
+
+        map = new Hex[Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth)), 3 * Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth))];
+
+        foreach (Hex x in unsortedHexes)
+        {
+            map[x.x, x.y] = x;
+        }
+    }
+
+    public int[] FindInitialCoordinates(int c)
+    {
+        if (c <= 4)
+        {
+            return new int[] { c, 2 * Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth)) };
+        }
+        else if (c <= 14)
+        {
+            return new int[] { c - 4, Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth)) };
+        }
+        else
+        {
+            return new int[] { c - 14, Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth)) };
         }
     }
 
@@ -297,6 +352,9 @@ public class HexSphereGenerator : MonoBehaviour
 
 public class Vertex
 {
+    public int x;
+    public int y;
+
     public Vector3 pos;
 
     public Vertex (Vector3 v)
@@ -313,11 +371,16 @@ public class Vertex
 
 public class Hex
 {
+    public int x;
+    public int y;
+
     public bool pent;
 
     public Vertex center;
 
     public Vertex[] vertices;
+
+    public Color color;
 
     public void CalculateCenter()
     {

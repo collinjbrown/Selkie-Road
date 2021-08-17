@@ -374,9 +374,9 @@ MonoBehaviour:
   isPlanet: 0
   generate: 1
   generatePlanet: 1
-  hexes: 1
+  hexes: 0
   subdivideDepth: 4
-  oceanDepth: 0.9
+  oceanDepth: 0.89
   worldRadius: 80
   hexChunkPrefab: {fileID: 1071003511907024834, guid: bd94ba70046e9ca42b0c6bc3c07c5bbb,
     type: 3}
