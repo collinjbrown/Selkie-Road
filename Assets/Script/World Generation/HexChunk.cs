@@ -35,21 +35,15 @@ public class HexChunk : MonoBehaviour
 
     public Triangle origin;
 
-    List<MeshCollider> meshColliders = new List<MeshCollider>();
-
-    public void Render(bool hex)
+    public void Render(bool hex, bool map)
     {
         // Displays the chunk in the world.
-        foreach (MeshCollider m in meshColliders)
+        if (map)
         {
-            Destroy(m);
+            MapVertsAndTris(hex);
         }
 
-        meshColliders = new List<MeshCollider>();
-        MapVertsAndTris(hex);
-
         Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
-        // this.gameObject.GetComponent<MeshRenderer>().material.color = color;
 
         mesh.Clear();
         mesh.vertices = mapVerts;
@@ -67,32 +61,48 @@ public class HexChunk : MonoBehaviour
 
         MeshCollider meshCol = this.gameObject.GetComponent<MeshCollider>();
         meshCol.sharedMesh = mesh;
+    }
 
-        // I don't know how to get convex colliders working, so we'll leave this for now...
-        // and simply find other ways to do what I want to do.
+    public void UpdateColors(bool render)
+    {
+        mapColors = new Color[mapVerts.Length];
 
-        //int polygonLimit = (255) * 3;
+        int vertOffset = 0;
 
-        //for (int i = 0; i < mapTris.Length; i += polygonLimit)
-        //{
-        //    MeshCollider meshCol = this.gameObject.AddComponent<MeshCollider>();
-        //    meshCol.sharedMesh = new Mesh();
-        //    meshCol.convex = true;
-        //    meshColliders.Add(meshCol);
-        //    meshCol.sharedMesh.vertices = mapVerts;
+        for (int t = 0; t < hexes.Length; t++)
+        {
+            Hex h = hexes[t];
 
-        //    int takeAmount = polygonLimit;
-        //    if (i + takeAmount > mapTris.Length)
-        //    {
-        //        takeAmount = (i + takeAmount) - mapTris.Length;
-        //    }
+            mapColors[(t * 13) + 0 + vertOffset] = h.color;
+            mapColors[(t * 13) + 1 + vertOffset] = h.color;
+            mapColors[(t * 13) + 2 + vertOffset] = h.color;
+            mapColors[(t * 13) + 3 + vertOffset] = h.color;
+            mapColors[(t * 13) + 4 + vertOffset] = h.color;
+            mapColors[(t * 13) + 5 + vertOffset] = h.color;
+            mapColors[(t * 13) + 6 + vertOffset] = h.color;
+            mapColors[(t * 13) + 7 + vertOffset] = h.color;
+            mapColors[(t * 13) + 8 + vertOffset] = h.color;
+            mapColors[(t * 13) + 9 + vertOffset] = h.color;
 
-        //    meshCol.sharedMesh.triangles = mapTris.Skip(i).Take(takeAmount).ToArray();
-        //    Debug.Log($"{meshCol.sharedMesh.triangles.Length / 3}");
 
-        //    meshCol.sharedMesh.RecalculateBounds();
-        //    meshCol.sharedMesh.RecalculateNormals();
-        //}
+            // Recheck listings.
+            if (!h.pent)
+            {
+                mapColors[(t * 13) + 10 + vertOffset] = h.color;
+                mapColors[(t * 13) + 11 + vertOffset] = h.color;
+                mapColors[(t * 13) + 12 + vertOffset] = h.color;
+
+                vertOffset = 0;
+            }
+            else
+            {
+                mapColors[(t * 13) + 10 + vertOffset] = h.color;
+
+                vertOffset = -2;
+            }
+        }
+
+        Render(true, false);
     }
 
     public void Hexify(HexSphereGenerator hGen)
@@ -120,7 +130,7 @@ public class HexChunk : MonoBehaviour
                 newHex.center = new Vertex(v.pos);
                 newHex.color = color;
                 hGen.vertHexes.Add(v.pos, newHex);
-                
+
                 // Add vertices.
                 if (origin.vA.pos == v.pos || origin.vB.pos == v.pos || origin.vC.pos == v.pos)
                 {
@@ -250,7 +260,7 @@ public class HexChunk : MonoBehaviour
     {
         Hex closestHex = null;
         float closestDistance = Mathf.Infinity;
-        
+
         for (int i = 0; i < hexes.Length; i++)
         {
             Hex h = hexes[i];
@@ -279,7 +289,7 @@ public class HexChunk : MonoBehaviour
 
             int intElev = Mathf.RoundToInt(elevation);
 
-            if (intElev % 2 != 0)
+            if (intElev % noiseSettings.terraceCutoff != 0)
             {
                 intElev += noiseSettings.terracing;
             }
@@ -446,7 +456,7 @@ public class HexChunk : MonoBehaviour
 
             Vector3[] axes = FindRelativeAxes(center.center);
 
-            Hex selectNeighbor = center.neighbors.OrderBy((p) => -((((Vector3.up * 3) + (axes[2] * 0.25f)) + center.center.pos) - p.center.pos).sqrMagnitude).ToList()[0];
+            Hex selectNeighbor = center.neighbors.OrderBy((p) => ((((Vector3.up * 3) + axes[2]) + center.center.pos) - p.center.pos).sqrMagnitude).ToList()[0];
 
             List<Hex> checkedNeighbors = new List<Hex>();
 
@@ -621,6 +631,7 @@ public class HexChunk : MonoBehaviour
 
                 mapVerts[t * 3 + 2] = tri.vC.pos; // C
                 mapTris[t * 3 + 2] = t * 3 + 2;
+
             }
         }
         else
@@ -781,7 +792,7 @@ public class HexChunk : MonoBehaviour
         }
     }
 
-    #region Garbage
+    #region Misc
 
     public int[] FindNeighbors(int o)
     {

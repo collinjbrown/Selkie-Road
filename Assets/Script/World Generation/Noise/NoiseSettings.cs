@@ -17,4 +17,5 @@ public class NoiseSettings
     public float minValue;
     public float maxValue = 0.75f;
     public int terracing = 1;
+    public int terraceCutoff = 2;
 }

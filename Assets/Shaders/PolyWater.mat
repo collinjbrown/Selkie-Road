@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PolyWater
+  m_Shader: {fileID: -6465566751694194690, guid: bf3f62c25f0d4474bbea4f7ab8893d35,
+    type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - Texture2D_B5C71FBC:
+        m_Texture: {fileID: 2800000, guid: 1de911831dd0fec44a71c95a0e2b1967, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - Vector1_26D1D58A: 0.79
+    - Vector1_4F3A99C5: 8
+    - Vector1_5BB0EAE8: -0.16
+    - Vector1_7A382CB3: 1.12
+    - Vector1_86EA34F1: 6.71
+    - Vector1_B4CC7767: 5.11
+    - Vector1_C0A097AB: 0.12
+    - Vector1_D5D13062: -0.6
+    - Vector1_E334EC03: 1.51
+    - Vector1_F1796A57: 0.05
+    - Vector1_F1D7C9B6: 0.005
+    - Vector1_F7372ECE: 4.75
+    m_Colors:
+    - Color_497254AC: {r: 0, g: 0.3905811, b: 1, a: 1}
+    - Color_B27A714C: {r: 1, g: 1, b: 1, a: 0.4392157}
+    - Color_D8288862: {r: 0.495283, g: 0.9893509, b: 1, a: 0.2509804}
