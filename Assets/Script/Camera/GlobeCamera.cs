@@ -24,7 +24,17 @@ public class GlobeCamera : MonoBehaviour
                 {
                     Hex h = objectHit.GetComponent<HexChunk>().ListNearestHex(hit.point);
 
-                    Debug.Log($"Hex Coordinates :: {h.x} / {h.y}");
+                    this.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(0, objectHit.transform.position);
+                    this.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(1, h.center.pos * 2);
+
+                    UnityEngine.Debug.DrawRay(objectHit.transform.position, h.neighbors[0].center.pos * 2, Color.red, Mathf.Infinity, true);
+                    UnityEngine.Debug.DrawRay(objectHit.transform.position, h.neighbors[1].center.pos * 2, Color.yellow, Mathf.Infinity, true);
+                    UnityEngine.Debug.DrawRay(objectHit.transform.position, h.neighbors[2].center.pos * 2, Color.green, Mathf.Infinity, true);
+                    UnityEngine.Debug.DrawRay(objectHit.transform.position, h.neighbors[3].center.pos * 2, Color.blue, Mathf.Infinity, true);
+                    UnityEngine.Debug.DrawRay(objectHit.transform.position, h.neighbors[4].center.pos * 2, Color.cyan, Mathf.Infinity, true);
+                    UnityEngine.Debug.DrawRay(objectHit.transform.position, h.neighbors[5].center.pos * 2, Random.ColorHSV(), Mathf.Infinity, true);
+
+                    Debug.Log($"Hex Coordinates :: {h.x} / {h.y}.");
                 }
             }
             else

@@ -98,7 +98,6 @@ public class HexChunk : MonoBehaviour
     public void Hexify(HexSphereGenerator hGen)
     {
         // Converts triangles into hexes.
-
         int mod = 0;
 
         if (number == 0 || number == 19)
@@ -116,14 +115,13 @@ public class HexChunk : MonoBehaviour
 
             if (!hGen.vertHexes.ContainsKey(v.pos))
             {
+                // Set up new hex.
                 Hex newHex = new Hex();
                 newHex.center = new Vertex(v.pos);
-                newHex.color = Random.ColorHSV();
-                newHex.x = v.x;
-                newHex.y = v.y;
+                newHex.color = color;
                 hGen.vertHexes.Add(v.pos, newHex);
-                newHex.vertices = new Vertex[6];
-
+                
+                // Add vertices.
                 if (origin.vA.pos == v.pos || origin.vB.pos == v.pos || origin.vC.pos == v.pos)
                 {
                     // Adds a pentagon to an "original" vertex.
@@ -159,6 +157,7 @@ public class HexChunk : MonoBehaviour
                     newHex.CalculateCenter();
                 }
 
+                FindHexNeighbors(hGen, newHex, v);
                 hexCenters.Add(newHex.center.pos, newHex);
                 hexes[hFound] = newHex;
                 hGen.unsortedHexes.Add(newHex);
@@ -178,6 +177,7 @@ public class HexChunk : MonoBehaviour
             Hex newHex = new Hex();
             newHex.center = new Vertex(v.pos);
             hGen.vertHexes.Add(v.pos, newHex);
+            newHex.color = color;
             newHex.vertices = new Vertex[6];
 
             newHex.pent = true;
@@ -192,6 +192,7 @@ public class HexChunk : MonoBehaviour
             newHex.vertices[4] = vertsFound[4];
 
             newHex.CalculateCenter();
+            FindHexNeighbors(hGen, newHex, v);
 
             hexCenters.Add(newHex.center.pos, newHex);
             hexes[hFound] = newHex;
@@ -205,6 +206,7 @@ public class HexChunk : MonoBehaviour
             Hex newHex = new Hex();
             newHex.center = new Vertex(v.pos);
             hGen.vertHexes.Add(v.pos, newHex);
+            newHex.color = color;
             newHex.vertices = new Vertex[6];
 
             newHex.pent = true;
@@ -219,11 +221,28 @@ public class HexChunk : MonoBehaviour
             newHex.vertices[4] = vertsFound[4];
 
             newHex.CalculateCenter();
+            FindHexNeighbors(hGen, newHex, v);
 
             hexCenters.Add(newHex.center.pos, newHex);
             hexes[hFound] = newHex;
             hGen.unsortedHexes.Add(newHex);
             // hFound++;
+        }
+    }
+
+    public void FindHexNeighbors(HexSphereGenerator hGen, Hex h, Vertex oldCenter)
+    {
+        List<Vector3> vertNeighbors = FindTriangleCorners(hGen, oldCenter);
+
+        foreach (Vector3 v in vertNeighbors)
+        {
+            if (hGen.vertHexes.ContainsKey(v))
+            {
+                if (hGen.vertHexes[v] != h)
+                {
+                    h.AddNeighbor(hGen.vertHexes[v]);
+                }
+            }
         }
     }
 
@@ -246,7 +265,7 @@ public class HexChunk : MonoBehaviour
         return closestHex;
     }
 
-    public void AddHexNoise(NoiseFilter noiseFilter, HexSphereGenerator hGen)
+    public void AddHexNoise(NoiseFilter noiseFilter, NoiseSettings noiseSettings, HexSphereGenerator hGen)
     {
         List<Vector3> wallVertsList = new List<Vector3>();
         List<int> wallTrisList = new List<int>();
@@ -262,7 +281,7 @@ public class HexChunk : MonoBehaviour
 
             if (intElev % 2 != 0)
             {
-                intElev += 1;
+                intElev += noiseSettings.terracing;
             }
 
             hex.center.pos += normal * intElev;
@@ -333,6 +352,25 @@ public class HexChunk : MonoBehaviour
         return vertNeighbors;
     }
 
+    public List<Vector3> FindTriangleCorners(HexSphereGenerator hGen, Vertex p)
+    {
+        // Finds all the neighboring vertices where a hex's corners will go.
+
+        List<Triangle> triNeighbors = hGen.vecTriangleNeighbors[p.pos];
+        List<Vector3> vertNeighbors = new List<Vector3>();
+
+        for (int t = 0; t < triNeighbors.Count; t++)
+        {
+            Triangle tri = triNeighbors[t];
+
+            vertNeighbors.Add(tri.vA.pos);
+            vertNeighbors.Add(tri.vB.pos);
+            vertNeighbors.Add(tri.vC.pos);
+        }
+
+        return vertNeighbors;
+    }
+
     public Vertex[] SortNeighbors(Vertex[] points, Vertex center)
     {
         // Sorts the vertices from "FindVertices" so that they are...
@@ -395,6 +433,75 @@ public class HexChunk : MonoBehaviour
 
         return sortedNeighbors;
 
+    }
+
+    public void SortHexNeighbors()
+    {
+        for (int hi = 0; hi < hexes.Length; hi++)
+        {
+            Hex center = hexes[hi];
+
+            // Sorts a hex's neighbors from the top, clockwise.
+            Hex[] sortedNeighbors = new Hex[6];
+
+            Vector3[] axes = FindRelativeAxes(center.center);
+
+            Hex selectNeighbor = center.neighbors.OrderBy((p) => -((((Vector3.up * 3) + (axes[2] * 0.25f)) + center.center.pos) - p.center.pos).sqrMagnitude).ToList()[0];
+
+            List<Hex> checkedNeighbors = new List<Hex>();
+
+            int run = 0;
+
+            while (run < center.neighbors.Count)
+            {
+                sortedNeighbors[run] = selectNeighbor;
+                checkedNeighbors.Add(selectNeighbor);
+
+                Hex closestNeighbor = null;
+                float closestDistance = Mathf.Infinity;
+
+                if (run == 0)
+                {
+                    List<Hex> closestNeighbors = new List<Hex>();
+                    closestNeighbors = center.neighbors.OrderBy((q) => (q.center.pos - selectNeighbor.center.pos).sqrMagnitude).ToList();
+                    closestNeighbors.Remove(selectNeighbor);
+
+                    Hex c1 = closestNeighbors[0];
+                    Hex c2 = closestNeighbors[1];
+
+                    Vector3 crossN = Vector3.Cross((c2.center.pos - selectNeighbor.center.pos), (c1.center.pos - selectNeighbor.center.pos));
+                    float w = Vector3.Dot(crossN, (selectNeighbor.center.pos - center.center.pos));
+
+                    if (w > 0)
+                    {
+                        closestNeighbor = c2;
+                    }
+                    else
+                    {
+                        closestNeighbor = c1;
+                    }
+                }
+                else
+                {
+                    foreach (Hex s in center.neighbors)
+                    {
+                        if (!checkedNeighbors.Contains(s))
+                        {
+                            if ((s.center.pos - selectNeighbor.center.pos).sqrMagnitude < closestDistance)
+                            {
+                                closestDistance = (s.center.pos - selectNeighbor.center.pos).sqrMagnitude;
+                                closestNeighbor = s;
+                            }
+                        }
+                    }
+                }
+
+                run++;
+                selectNeighbor = closestNeighbor;
+            }
+
+            center.neighbors = sortedNeighbors.ToList();
+        }
     }
 
     int CountUniqueVerts(Dictionary<Vector3, Hex> checkedVerts)
@@ -674,6 +781,8 @@ public class HexChunk : MonoBehaviour
         }
     }
 
+    #region Garbage
+
     public int[] FindNeighbors(int o)
     {
         // There must be a more elegent way to do this...
@@ -737,7 +846,7 @@ public class HexChunk : MonoBehaviour
         return new int[] { r, l, v };
     }
 
-    public Vector3[] FindRelativeAxes(Vertex v)
+    public static Vector3[] FindRelativeAxes(Vertex v)
     {
         Vector3 forward = v.pos.normalized;
 
@@ -753,11 +862,11 @@ public class HexChunk : MonoBehaviour
         }
         else if (forward == Vector3.down)
         {
-            up = Vector3.forward;
+            up = Vector3.right;
         }
         else if (forward == Vector3.up)
         {
-            up = Vector3.back;
+            up = Vector3.left;
         }
         else
         {
@@ -771,7 +880,7 @@ public class HexChunk : MonoBehaviour
         return new Vector3[] { forward, up, right };
     }
 
-    Vector3 RelativeMovement(Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
+    public static Vector3 RelativeMovement(Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
     {
         return new Vector3((p.x * right.x) + (p.y * up.x) + (p.z * forward.x), (p.x * right.y) + (p.y * up.y) + (p.z * forward.y), (p.x * right.z) + (p.y * up.z) + (p.z * forward.z));
     }
@@ -789,4 +898,5 @@ public class HexChunk : MonoBehaviour
     {
         return new Vector2(vector2.y, -vector2.x);
     }
+    #endregion
 }

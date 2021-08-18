@@ -16,4 +16,5 @@ public class NoiseSettings
     public Vector3 center;
     public float minValue;
     public float maxValue = 0.75f;
+    public int terracing = 1;
 }

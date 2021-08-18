@@ -46,8 +46,6 @@ public class HexSphereGenerator : MonoBehaviour
     void Start()
     {
         // Starts the generation process (if that's something we want).
-        Stopwatch st = new Stopwatch();
-        st.Start();
 
         if (generate)
         {
@@ -70,9 +68,6 @@ public class HexSphereGenerator : MonoBehaviour
             pt.Stop();
             UnityEngine.Debug.Log($"Planet generation took {pt.ElapsedMilliseconds} milliseconds.");
         }
-
-        st.Stop();
-        UnityEngine.Debug.Log($"Total world generation took {st.ElapsedMilliseconds} milliseconds.");
     }
 
     public void Generate()
@@ -139,6 +134,12 @@ public class HexSphereGenerator : MonoBehaviour
             foreach (HexChunk c in chunks)
             {
                 c.Hexify(this);
+            }
+
+            foreach (HexChunk c in chunks)
+            {
+                c.SortHexNeighbors();
+
                 c.Render(true);
             }
 
@@ -155,7 +156,13 @@ public class HexSphereGenerator : MonoBehaviour
                 foreach (HexChunk c in chunks)
                 {
                     c.Hexify(this);
-                    c.AddHexNoise(noiseFilter, this);
+                }
+
+                foreach (HexChunk c in chunks)
+                {
+                    c.SortHexNeighbors();
+
+                    c.AddHexNoise(noiseFilter, noiseSettings, this);
 
                     c.Render(true);
                 }
@@ -199,14 +206,44 @@ public class HexSphereGenerator : MonoBehaviour
 
     public void CoordinateHexes()
     {
+        // This is broken.
+
         // Takes the unsorted hexes' coordinates and puts them...
         // in the map array for safe keeping.
 
-        map = new Hex[Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth)), 3 * Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth))];
+        List<Hex> coordinatedHexes = new List<Hex>();
 
-        foreach (Hex x in unsortedHexes)
+        RaycastHit hit;
+        Physics.Raycast(transform.position + new Vector3(0, -worldRadius * 2,0), transform.TransformDirection(Vector3.up) * 1000.0f, out hit, Mathf.Infinity);
+
+        Hex selectHex = hit.transform.gameObject.GetComponent<HexChunk>().ListNearestHex(hit.point);
+
+        map = new Hex[Mathf.RoundToInt(10 * Mathf.Pow(2, subdivideDepth)), 10 * Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth))];
+
+        Camera cam = Camera.main;
+
+        cam.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+        cam.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(1, selectHex.center.pos * 2);
+
+        while (coordinatedHexes.Count < vertHexes.Count)
         {
-            map[x.x, x.y] = x;
+            coordinatedHexes.Add(selectHex);
+            map[selectHex.x, selectHex.y] = selectHex;
+
+            if (!coordinatedHexes.Contains(selectHex.neighbors[2]))
+            {
+                selectHex.neighbors[2].x = selectHex.x + 1;
+                selectHex.neighbors[2].y = selectHex.y;
+
+                selectHex = selectHex.neighbors[2];
+            }
+            else
+            {
+                selectHex.neighbors[3].x = selectHex.x;
+                selectHex.neighbors[3].y = selectHex.y + 1;
+
+                selectHex = selectHex.neighbors[3];
+            }
         }
     }
 
@@ -381,6 +418,21 @@ public class Hex
     public Vertex[] vertices;
 
     public Color color;
+
+    public List<Hex> neighbors = new List<Hex>();
+
+    public void AddNeighbor(Hex h)
+    {
+        if (!neighbors.Contains(h))
+        {
+            neighbors.Add(h);
+        }
+
+        if (!h.neighbors.Contains(this))
+        {
+            h.neighbors.Add(this);
+        }
+    }
 
     public void CalculateCenter()
     {

@@ -47,7 +47,7 @@ MonoBehaviour:
   generate: 0
   generatePlanet: 0
   hexes: 0
-  subdivideDepth: 4
+  subdivideDepth: 3
   oceanDepth: 0
   worldRadius: 0
   hexChunkPrefab: {fileID: 1071003511907024834, guid: bd94ba70046e9ca42b0c6bc3c07c5bbb,
@@ -65,5 +65,6 @@ MonoBehaviour:
     center: {x: 0, y: 0, z: 0}
     minValue: 0
     maxValue: 0
+    terracing: 1
   maxContDist: 0
   oceanRadius: 0

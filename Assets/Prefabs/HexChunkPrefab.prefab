@@ -97,6 +97,7 @@ MonoBehaviour:
   neighbors: 
   mapVerts: []
   mapTris: 
+  mapColors: []
   wallVerts: []
   wallTris: 
   color: {r: 0, g: 0, b: 0, a: 0}
