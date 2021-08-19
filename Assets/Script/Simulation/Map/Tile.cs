@@ -46,9 +46,6 @@ namespace DeadReckoning.Map
             // This needs to be called before we add noise...
             // so that we can add mountains when we do that.
 
-            // I want there to be a better way to do this...
-            // other than simply flood-filling patches...
-            // as that will take forever.
             List<Tile> uncheckedTiles = tiles;
 
             for (int i = 0; i < settings.tectonicPlates; i++)
@@ -146,12 +143,75 @@ namespace DeadReckoning.Map
 
         public enum Precipitation { veryHigh, high, mid, low, veryLow }
         public enum Gradient { veryHigh, high, mid, low, veryLow }
-        public enum Biome { forest, desert, mountain, plain }
+        public enum Biome { tropicalRainforest, desert, mountain, plain, highlands }
         public enum WindType { trade, westerly, easterly }
         public enum CurrentHeat { none, lukewarm, mixed, warm, cold }
         public enum FlowDirection { none, east, west, north, south }
 
         #region Worldbuilding
+
+        public bool SearchForMountains(FlowDirection neighborDirection)
+        {
+            int searchDistance = Mathf.RoundToInt(windMagnitude * 3);
+
+            int[] neighborInds = new int[] { 1, 2, 3 };
+
+            if (neighborDirection == FlowDirection.east)
+            {
+                neighborInds = new int[] { 0, 5, 4 };
+
+                if (hex.pent)
+                {
+                    neighborInds = new int[] { 0, 4 };
+                }
+            }
+            else if (neighborDirection == FlowDirection.north)
+            {
+                neighborInds = new int[] { 1, 0 };
+            }
+            else if (neighborDirection == FlowDirection.south)
+            {
+                neighborInds = new int[] { 3, 4 };
+            }
+
+            List<Tile> searchTiles = new List<Tile>();
+
+            for (int n = 0; n < neighborInds.Length; n++)
+            {
+                Tile t = hex.neighbors[neighborInds[n]].tile;
+                searchTiles.Add(t);
+            }
+
+            for (int i = 0; i < searchDistance; i++)
+            {
+                List<Tile> tempSearches = new List<Tile>();
+
+                foreach (Tile t in searchTiles)
+                {
+                    for (int n = 0; n < neighborInds.Length; n++)
+                    {
+                        if (t.hex.pent && neighborInds[n] == 5)
+                        {
+                            continue;
+                        }
+
+                        Tile neighbor = t.hex.neighbors[neighborInds[n]].tile;
+
+                        if (neighbor.faultAdjacent || neighbor.fault)
+                        {
+                            return true;
+                        }
+
+                        tempSearches.Add(neighbor);
+                    }
+                }
+
+                searchTiles = tempSearches;
+            }
+
+            return false;
+        }
+
         public void DetermineWinds(HexSphereGenerator hGen)
         {
             // We might consider tapering winds into the other cells...
@@ -326,8 +386,76 @@ namespace DeadReckoning.Map
 
         public void DetermineBiomes(HexSphereGenerator hGen)
         {
+            Vector3 pos = hex.center.pos;
+            Vector3 worldCenter = hGen.transform.position;
+            float worldRadius = hGen.worldRadius;
+            float equatorY = hGen.transform.position.y;
+
+            hex.biomeColor = Color.white;
+
             precipitation = EstimatePrecipitation();
             temperature = EstimateTemperature(hGen);
+
+            if (fault)
+            {
+                biome = Biome.mountain;
+                temperature = Gradient.veryLow;
+                hex.biomeColor = map.settings.mountainColor;
+            }
+            else if (faultAdjacent)
+            {
+                biome = Biome.highlands;
+                temperature = Gradient.low;
+                hex.biomeColor = map.settings.highlandsColor;
+            }
+
+            // Deserts are fairly simple.
+            if (SearchForMountains(windDirection))
+            {
+                biome = Biome.desert;
+                temperature = Gradient.veryHigh;
+                precipitation = Gradient.veryLow;
+                hex.biomeColor = map.settings.desertColor;
+            }
+            else
+            {
+                FlowDirection oppositeWind;
+
+                if (windDirection == FlowDirection.east)
+                {
+                    oppositeWind = FlowDirection.west;
+                }
+                else if (windDirection == FlowDirection.west)
+                {
+                    oppositeWind = FlowDirection.east;
+                }
+                else if (windDirection == FlowDirection.north)
+                {
+                    oppositeWind = FlowDirection.south;
+                }
+                else
+                {
+                    oppositeWind = FlowDirection.north;
+                }
+
+                if (SearchForMountains(oppositeWind) && biome != Biome.desert)
+                {
+                    precipitation = Gradient.veryHigh;
+                }
+            }
+
+            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.rainForestCutoff)
+            {
+                if (temperature == Gradient.high && precipitation == Gradient.high
+                    || temperature == Gradient.high && precipitation == Gradient.veryHigh
+                    || temperature == Gradient.veryHigh && precipitation == Gradient.high
+                    || temperature == Gradient.veryHigh && precipitation == Gradient.veryHigh)
+                {
+                    biome = Biome.tropicalRainforest;
+                    hex.biomeColor = map.settings.rainforestColor;
+                }
+            }
+
         }
 
         public Gradient EstimateTemperature(HexSphereGenerator hGen)

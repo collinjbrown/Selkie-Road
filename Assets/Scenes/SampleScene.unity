@@ -1898,6 +1898,7 @@ MonoBehaviour:
     hadleyCellCutoff: 0.4
     ferrelCellCutoff: 0.8
     windCurrentCutoff: 0.75
+    rainForestCutoff: 0.1
     veryHighTemperatureCutoff: 2
     highTemperatureCutoff: 1
     lowTemperatureCutoff: -1
@@ -1906,6 +1907,10 @@ MonoBehaviour:
     highPrecipitationCutoff: 2
     lowPrecipitationCutoff: 0
     veryLowPrecipitationCutoff: -1
+    mountainColor: {r: 1, g: 1, b: 1, a: 1}
+    rainforestColor: {r: 0, g: 0.097765446, b: 1, a: 1}
+    desertColor: {r: 1, g: 0, b: 0, a: 1}
+    highlandsColor: {r: 0.42093948, g: 0.6037736, b: 0.41865435, a: 1}
   chunks: []
   maxContDist: 0
   oceanRadius: 0

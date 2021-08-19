@@ -20,6 +20,8 @@ public class WorldbuildingSettings
     [Range(0f, 1.0f)]
     public float windCurrentCutoff = 0.75f;
 
+    public float rainForestCutoff = 0.1f; // Earth is around 10.
+
     public float veryHighTemperatureCutoff = 2.0f;
     public float highTemperatureCutoff = 1.0f;
     public float lowTemperatureCutoff = -1.0f;
@@ -30,4 +32,8 @@ public class WorldbuildingSettings
     public float lowPrecipitationCutoff = -1.0f;
     public float veryLowPrecipitationCutoff = -2.0f;
 
+    public Color mountainColor = Color.white;
+    public Color rainforestColor = Color.blue;
+    public Color desertColor = Color.yellow;
+    public Color highlandsColor = Color.Lerp(Color.green, Color.white, 0.25f);
 }
