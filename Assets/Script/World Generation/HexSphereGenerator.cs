@@ -42,6 +42,8 @@ namespace DeadReckoning.WorldGeneration
         public float maxContDist;
         [HideInInspector]
         public float oceanRadius;
+
+        Camera mainCamera;
         #endregion
 
         #region General Generation
@@ -75,6 +77,7 @@ namespace DeadReckoning.WorldGeneration
         public void Generate()
         {
             // Generates the world.
+            mainCamera = Camera.main;
             vertHexes = new Dictionary<Vector3, Hex>();
             noiseFilter = new NoiseFilter(noiseSettings);
             unsortedHexes = new List<Hex>();
@@ -158,6 +161,7 @@ namespace DeadReckoning.WorldGeneration
 
                     // I feel like we should do something more with this, but we'll get there eventually.
                     Map.TileMap map = new Map.TileMap(primitiveTiles);
+                    map.Generate(this);
                 }
                 else
                 {
@@ -191,6 +195,16 @@ namespace DeadReckoning.WorldGeneration
             foreach (HexChunk c in planetGenerator.chunks)
             {
                 c.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            }
+        }
+        #endregion
+
+        #region Presentation
+        public void ChangeLenses()
+        {
+            foreach (HexChunk c in chunks)
+            {
+                c.UpdateColors(true, mainCamera.gameObject.GetComponent<GlobeCamera>().lens);
             }
         }
         #endregion
@@ -391,6 +405,8 @@ namespace DeadReckoning.WorldGeneration
 
     public class Hex
     {
+        public Map.Tile tile;
+
         public int x;
         public int y;
 
@@ -401,6 +417,9 @@ namespace DeadReckoning.WorldGeneration
         public Vertex[] vertices;
 
         public Color color;
+        public Color windColor;
+        public Color currentColor;
+        public Color biomeColor;
 
         public List<Hex> neighbors = new List<Hex>();
 

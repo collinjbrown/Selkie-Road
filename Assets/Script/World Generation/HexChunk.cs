@@ -68,7 +68,7 @@ namespace DeadReckoning.WorldGeneration
             meshCol.sharedMesh = mesh;
         }
 
-        public void UpdateColors(bool render)
+        public void UpdateColors(bool render, GlobeCamera.Lens lens)
         {
             mapColors = new Color[mapVerts.Length];
 
@@ -77,31 +77,49 @@ namespace DeadReckoning.WorldGeneration
             for (int t = 0; t < hexes.Length; t++)
             {
                 Hex h = hexes[t];
+                Color hColor = Color.white;
 
-                mapColors[(t * 13) + 0 + vertOffset] = h.color;
-                mapColors[(t * 13) + 1 + vertOffset] = h.color;
-                mapColors[(t * 13) + 2 + vertOffset] = h.color;
-                mapColors[(t * 13) + 3 + vertOffset] = h.color;
-                mapColors[(t * 13) + 4 + vertOffset] = h.color;
-                mapColors[(t * 13) + 5 + vertOffset] = h.color;
-                mapColors[(t * 13) + 6 + vertOffset] = h.color;
-                mapColors[(t * 13) + 7 + vertOffset] = h.color;
-                mapColors[(t * 13) + 8 + vertOffset] = h.color;
-                mapColors[(t * 13) + 9 + vertOffset] = h.color;
+                if (lens == GlobeCamera.Lens.plain)
+                {
+                    hColor = h.color;
+                }
+                else if (lens == GlobeCamera.Lens.winds)
+                {
+                    hColor = h.windColor;
+                }
+                else if (lens == GlobeCamera.Lens.currents)
+                {
+                    hColor = h.currentColor;
+                }
+                else if (lens == GlobeCamera.Lens.biomes)
+                {
+                    hColor = h.biomeColor;
+                }
+
+                mapColors[(t * 13) + 0 + vertOffset] = hColor;
+                mapColors[(t * 13) + 1 + vertOffset] = hColor;
+                mapColors[(t * 13) + 2 + vertOffset] = hColor;
+                mapColors[(t * 13) + 3 + vertOffset] = hColor;
+                mapColors[(t * 13) + 4 + vertOffset] = hColor;
+                mapColors[(t * 13) + 5 + vertOffset] = hColor;
+                mapColors[(t * 13) + 6 + vertOffset] = hColor;
+                mapColors[(t * 13) + 7 + vertOffset] = hColor;
+                mapColors[(t * 13) + 8 + vertOffset] = hColor;
+                mapColors[(t * 13) + 9 + vertOffset] = hColor;
 
 
                 // Recheck listings.
                 if (!h.pent)
                 {
-                    mapColors[(t * 13) + 10 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 11 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 12 + vertOffset] = h.color;
+                    mapColors[(t * 13) + 10 + vertOffset] = hColor;
+                    mapColors[(t * 13) + 11 + vertOffset] = hColor;
+                    mapColors[(t * 13) + 12 + vertOffset] = hColor;
 
                     vertOffset = 0;
                 }
                 else
                 {
-                    mapColors[(t * 13) + 10 + vertOffset] = h.color;
+                    mapColors[(t * 13) + 10 + vertOffset] = hColor;
 
                     vertOffset = -2;
                 }
@@ -307,6 +325,7 @@ namespace DeadReckoning.WorldGeneration
 
                 Map.Tile tile = new Map.Tile(h);
                 hGen.primitiveTiles.Add(tile);
+                h.tile = tile;
             }
         }
         #endregion
