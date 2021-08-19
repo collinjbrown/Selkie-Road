@@ -21,7 +21,11 @@ namespace DeadReckoning.WorldGeneration
         public GameObject hexChunkPrefab;
         public Material chunkMaterial;
         public GameObject planetPrefab;
+
+        public GameObject windPrefab;
+
         public NoiseSettings noiseSettings;
+        public WorldbuildingSettings worldSettings;
 
         #region Hidden Variables
         [HideInInspector]
@@ -135,7 +139,7 @@ namespace DeadReckoning.WorldGeneration
                 {
                     c.SortHexNeighbors();
 
-                    c.Render(true, true);
+                    c.Render(true);
                 }
             }
             else
@@ -152,22 +156,30 @@ namespace DeadReckoning.WorldGeneration
                     foreach (HexChunk c in chunks)
                     {
                         c.SortHexNeighbors();
-
-                        c.AddHexNoise(noiseFilter, noiseSettings, this);
                         c.CreateMapTiles(this);
-
-                        c.Render(true, true);
                     }
 
-                    // I feel like we should do something more with this, but we'll get there eventually.
-                    Map.TileMap map = new Map.TileMap(primitiveTiles);
+                    Map.TileMap map = new Map.TileMap(primitiveTiles, worldSettings);
+                    map.DetermineContinents();
+                    UnityEngine.Debug.Log($"{primitiveTiles.Count} tiles generated.");
+
+                    foreach (HexChunk c in chunks)
+                    {
+                        c.AddHexNoise(noiseFilter, noiseSettings, this);
+                    }
+
                     map.Generate(this);
+
+                    foreach (HexChunk c in chunks)
+                    {
+                        c.Render(true);
+                    }
                 }
                 else
                 {
                     foreach (HexChunk c in chunks)
                     {
-                        c.Render(false, true);
+                        c.Render(false);
                     }
                 }
             }
@@ -204,7 +216,7 @@ namespace DeadReckoning.WorldGeneration
         {
             foreach (HexChunk c in chunks)
             {
-                c.UpdateColors(true, mainCamera.gameObject.GetComponent<GlobeCamera>().lens);
+                c.UpdateColors(mainCamera.gameObject.GetComponent<GlobeCamera>().lens);
             }
         }
         #endregion
@@ -420,6 +432,8 @@ namespace DeadReckoning.WorldGeneration
         public Color windColor;
         public Color currentColor;
         public Color biomeColor;
+        public Color temperatureColor;
+        public Color precipitationColor;
 
         public List<Hex> neighbors = new List<Hex>();
 

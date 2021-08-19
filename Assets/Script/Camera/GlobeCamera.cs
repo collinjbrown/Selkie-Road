@@ -11,16 +11,10 @@ public class GlobeCamera : MonoBehaviour
 
     public Lens lens;
 
-    public enum Lens { plain, winds, biomes, currents } // Add more later.
+    public enum Lens { plain, winds, currents, biomes, temperature, precipitation, plates } // Add more later.
 
     void FixedUpdate()
     {
-        if (Input.GetAxis("Mouse ScrollWheel") != 0)
-        {
-            cameraRadius += Input.GetAxis("Mouse ScrollWheel") * scrollSpeed * Time.deltaTime;
-            this.gameObject.transform.position = this.gameObject.transform.position.normalized * cameraRadius;
-        }
-
         if (Input.GetAxis("Horizontal") != 0)
         {
             RaycastHit hit;
@@ -69,12 +63,18 @@ public class GlobeCamera : MonoBehaviour
     Lens oldLens;
     void Update ()
     {
-        if (lens != oldLens && Input.GetButtonDown("Fire1"))
+        if (Input.GetAxis("Mouse ScrollWheel") != 0)
+        {
+            cameraRadius += Input.GetAxis("Mouse ScrollWheel") * scrollSpeed * Time.deltaTime;
+            this.gameObject.transform.position = this.gameObject.transform.position.normalized * cameraRadius;
+        }
+
+        if (lens != oldLens)
         {
             oldLens = lens;
 
             RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = new Ray(this.transform.position, this.transform.forward);
 
             if (Physics.Raycast(ray, out hit, 1000.0f))
             {
@@ -82,46 +82,11 @@ public class GlobeCamera : MonoBehaviour
                 objectHit.transform.parent.gameObject.GetComponent<HexSphereGenerator>().ChangeLenses();
             }
         }
+    }
 
-        //this.transform.LookAt(new Vector3(0, 0, 0));
-
-        //if (Input.GetButtonDown("Fire1"))
-        //{
-        //    RaycastHit hit;
-        //    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-
-        //    if (Physics.Raycast(ray, out hit, 1000.0f))
-        //    {
-        //        Debug.DrawRay(ray.origin, ray.direction * 1000.0f, Color.red, 10.0f);
-        //        GameObject objectHit = hit.transform.gameObject;
-
-        //        if (objectHit.GetComponent<HexChunk>() != null)
-        //        {
-        //            Hex h = objectHit.GetComponent<HexChunk>().ListNearestHex(hit.point);
-
-        //            this.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(0, objectHit.transform.position);
-        //            this.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(1, h.center.pos * 2);
-
-        //            h.neighbors[0].color = Color.red;
-        //            h.neighbors[1].color = Color.yellow;
-        //            h.neighbors[2].color = Color.green;
-        //            h.neighbors[3].color = Color.blue;
-        //            h.neighbors[4].color = Color.cyan;
-
-        //            if (!h.pent)
-        //            {
-        //                h.neighbors[5].color = Color.white;
-        //            }
-
-        //            objectHit.GetComponent<HexChunk>().UpdateColors(true, lens);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Debug.DrawRay(ray.origin, ray.direction * 1000.0f, Color.red, 10.0f);
-        //        Debug.Log("Ray didn't hit anything.");
-        //    }
-        //}
+    public void ChangeLens(int i)
+    {
+        lens = (Lens)i;
     }
 
     public static Vector3[] FindRelativeAxes(Vector3 v)

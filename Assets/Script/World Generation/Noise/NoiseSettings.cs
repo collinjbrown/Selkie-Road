@@ -18,4 +18,8 @@ public class NoiseSettings
     public float maxValue = 0.75f;
     public int terracing = 1;
     public int terraceCutoff = 2;
+
+    public float mountainBuff = 2;
+    public float mountainWeathering = 0.5f;
+    public float mountainSloping = 0.5f;
 }

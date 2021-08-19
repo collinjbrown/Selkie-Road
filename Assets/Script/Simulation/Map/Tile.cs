@@ -10,83 +10,188 @@ namespace DeadReckoning.Map
     public class TileMap
     {
         public List<Tile> tiles;
+        public List<Tile> land;
+        public List<Tile> ocean;
+
+        public List<TectonicPlate> plates;
+
+        public WorldbuildingSettings settings;
 
         public void Generate(HexSphereGenerator hGen)
         {
+            // We're going to move wind and current simulation to another object that tiles will reference.
+
             foreach (Tile t in tiles)
             {
+                t.map = this;
                 t.DetermineWinds(hGen);
                 t.DetermineSubmerged(hGen);
             }
+
+            Debug.Log($"Land Tiles: {land.Count} ({ (land.Count / (float)(ocean.Count + land.Count)) * 100 }%) // Sea Tiles: {ocean.Count} ({ (ocean.Count / (float)(ocean.Count + land.Count)) * 100 }%).");
+
             foreach (Tile t in tiles)
             {
                 t.DetermineCurrents(hGen);
+                t.DetermineBiomes(hGen);
+            }
+            foreach (Tile t in tiles)
+            {
+                t.ColorCurrents();
             }
         }
 
-        public TileMap (List<Tile> t)
+        public void DetermineContinents()
+        {
+            // This needs to be called before we add noise...
+            // so that we can add mountains when we do that.
+
+            // I want there to be a better way to do this...
+            // other than simply flood-filling patches...
+            // as that will take forever.
+            List<Tile> uncheckedTiles = tiles;
+
+            for (int i = 0; i < settings.tectonicPlates; i++)
+            {
+                Tile randomTile = uncheckedTiles[Random.Range(0, uncheckedTiles.Count)];
+                uncheckedTiles.Remove(randomTile);
+
+                TectonicPlate plate = new TectonicPlate(randomTile);
+                plate.color = Random.ColorHSV();
+
+                plates.Add(plate);
+            }
+
+            Debug.Log($"{plates.Count} tectonic plates generated.");
+
+            foreach (Tile t in tiles)
+            {
+                TectonicPlate closestPlate = null;
+                float closestDistance = Mathf.Infinity;
+
+                foreach (TectonicPlate p in plates)
+                {
+                    Vector3 p1 = p.tiles[0].hex.center.pos;
+                    Vector3 p2 = t.hex.center.pos;
+
+                    if (Mathf.Sqrt(Mathf.Pow(p1.x - p2.x, 2) + Mathf.Pow(p1.y - p2.y, 2) + Mathf.Pow(p1.z - p2.z, 2)) < closestDistance) // idk
+                    {
+                        closestDistance = Mathf.Sqrt(Mathf.Pow(p1.x - p2.x, 2) + Mathf.Pow(p1.y - p2.y, 2) + Mathf.Pow(p1.z - p2.z, 2));
+                        closestPlate = p;
+                    }
+                }
+
+                closestPlate.tiles.Add(t);
+                t.plate = closestPlate;
+            }
+
+            foreach (Tile t in tiles)
+            {
+                foreach (Hex h in t.hex.neighbors)
+                {
+                    if (h.tile.plate != t.plate)
+                    {
+                        t.fault = true;
+
+                        foreach (Hex h2 in t.hex.neighbors) // This is kinda gross (x3).
+                        {
+                            h2.tile.faultAdjacent = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        public TileMap (List<Tile> t, WorldbuildingSettings sett)
         {
             tiles = t;
+            land = new List<Tile>();
+            ocean = new List<Tile>();
+            plates = new List<TectonicPlate>();
+            settings = sett;
         }
     }
 
     public class Tile
     {
-        public bool submerged;
+        public bool submerged; // Underwater, duh.
+        public bool shore; // Edge of landmass.
+        public bool fault; // Edge of continent.
+        public bool faultAdjacent; // What is says on the tin.
+
+        public TileMap map;
+        public TectonicPlate plate;
 
         public List<Resource> resourceYields;
-        
+
         public List<Structure> structures;
 
+        public Gradient precipitation;
+        public Gradient temperature;
         public Biome biome;
 
-        public Vector3 prevailingWind;
+        public float windMagnitude;
+        public FlowDirection windDirection;
         public WindType windType;
 
-        public Tile currentDirection;
+        public FlowDirection currentDirection;
         public CurrentHeat currentHeat;
 
         public Hex hex;
 
-        public Tile (Hex h)
+        public Tile(Hex h)
         {
             hex = h;
         }
 
+        public enum Precipitation { veryHigh, high, mid, low, veryLow }
+        public enum Gradient { veryHigh, high, mid, low, veryLow }
         public enum Biome { forest, desert, mountain, plain }
         public enum WindType { trade, westerly, easterly }
-        public enum CurrentHeat { lukewarm, warm, cold }
+        public enum CurrentHeat { none, lukewarm, mixed, warm, cold }
+        public enum FlowDirection { none, east, west, north, south }
 
         #region Worldbuilding
         public void DetermineWinds(HexSphereGenerator hGen)
         {
+            // We might consider tapering winds into the other cells...
+            // so that there isn't such a hard cutoff between them.
+
+            float hadleyCutoff = map.settings.hadleyCellCutoff;
+            float ferrelCutoff = map.settings.ferrelCellCutoff;
+
             float worldRadius = hGen.worldRadius;
             Vector3 worldCenter = hGen.transform.position;
 
             Vector3 pos = this.hex.center.pos;
-            Vector3[] relativeAxes = HexChunk.FindRelativeAxes(this.hex.center);
+            // Vector3[] relativeAxes = HexChunk.FindRelativeAxes(this.hex.center);
 
-            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * 0.35f) // Really 30
+
+            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * hadleyCutoff)
             {
                 // Trade Winds
-                this.hex.windColor = Color.blue;
-                this.prevailingWind = -relativeAxes[2];
+                this.windMagnitude = Mathf.Abs(1 - ((Mathf.Abs(pos.y - worldCenter.y) / worldRadius) / hadleyCutoff));
+
+                this.hex.windColor = Color.Lerp(Color.white, Color.blue, windMagnitude);
+                this.windDirection = FlowDirection.west;
                 windType = WindType.trade;
             }
-            else if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * 0.75f) // Really 60
+            else if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * ferrelCutoff)
             {
                 // Westerlies
+                this.windMagnitude = Mathf.Abs(1 - (((Mathf.Abs(pos.y - worldCenter.y) / worldRadius) - hadleyCutoff) / hadleyCutoff));
 
-                this.hex.windColor = Color.red;
-                this.prevailingWind = relativeAxes[2];
+                this.hex.windColor = Color.Lerp(Color.white, Color.red, windMagnitude);
+                this.windDirection = FlowDirection.east;
                 windType = WindType.westerly;
             }
             else
             {
                 // Polar Easterlies
+                this.windMagnitude = Mathf.Abs(1 - (((Mathf.Abs(pos.y - worldCenter.y) / worldRadius) - ferrelCutoff) / hadleyCutoff));
 
-                this.hex.windColor = Color.cyan;
-                this.prevailingWind = -relativeAxes[2];
+                this.hex.windColor = Color.Lerp(Color.white, Color.cyan, windMagnitude);
+                this.windDirection = FlowDirection.west;
                 windType = WindType.easterly;
             }
         }
@@ -96,11 +201,17 @@ namespace DeadReckoning.Map
             if (hex.center.pos.magnitude < hGen.oceanRadius)
             {
                 submerged = true;
+                map.ocean.Add(this);
+            }
+            else
+            {
+                map.land.Add(this);
             }
         }
 
         public void DetermineCurrents(HexSphereGenerator hGen)
         {
+            float windCurrentCutoff = map.settings.windCurrentCutoff;
             float equatorY = hGen.transform.position.y;
 
             if (!submerged && !hex.pent)
@@ -110,108 +221,58 @@ namespace DeadReckoning.Map
                     // Warm on right, cold on left.
                     // This is overly simplistic, but we'll flesh this out later.
 
-                    Hex leftNeighbor = hex.neighbors[2];
-                    Hex rightNeighbor = hex.neighbors[5];
-
-                    if (leftNeighbor.tile.submerged)
+                    if (hex.center.pos.y >= equatorY)
                     {
-                        leftNeighbor.tile.currentHeat = CurrentHeat.cold; // This tile is on the left side of land.
-
-                        if (hex.center.pos.y >= equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(leftNeighbor, 3))
-                            {
-                                CheckNeighborSubmerge(leftNeighbor, 4);
-                            }
-                        }
-                        else if (hex.center.pos.y < equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(leftNeighbor, 0))
-                            {
-                                CheckNeighborSubmerge(leftNeighbor, 1);
-                            }
-                        }
+                        SetNeighborCurrents(hex, FlowDirection.west, CurrentHeat.cold, FlowDirection.south);
+                        SetNeighborCurrents(hex, FlowDirection.east, CurrentHeat.warm, FlowDirection.north);
                     }
-
-                    if (rightNeighbor.tile.submerged)  // This tile is on the right side of land.
+                    else
                     {
-                        rightNeighbor.tile.currentHeat = CurrentHeat.warm;
-
-                        if (hex.center.pos.y < equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(rightNeighbor, 3))
-                            {
-                                CheckNeighborSubmerge(rightNeighbor, 4);
-                            }
-                        }
-                        else if (hex.center.pos.y >= equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(rightNeighbor, 0))
-                            {
-                                CheckNeighborSubmerge(rightNeighbor, 1);
-                            }
-                        }
+                        SetNeighborCurrents(hex, FlowDirection.west, CurrentHeat.cold, FlowDirection.north);
+                        SetNeighborCurrents(hex, FlowDirection.east, CurrentHeat.warm, FlowDirection.south);
                     }
                 }
-                else if (windType == WindType.westerly)
+                else
                 {
-
-                    Hex leftNeighbor = hex.neighbors[2];
-                    Hex rightNeighbor = hex.neighbors[5];
-
-                    if (leftNeighbor.tile.submerged)
+                    if (hex.center.pos.y >= equatorY)
                     {
-                        leftNeighbor.tile.currentHeat = CurrentHeat.cold; // This tile is on the left side of land.
-
-                        if (hex.center.pos.y < equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(leftNeighbor, 3))
-                            {
-                                CheckNeighborSubmerge(leftNeighbor, 4);
-                            }
-                        }
-                        else if (hex.center.pos.y >= equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(leftNeighbor, 0))
-                            {
-                                CheckNeighborSubmerge(leftNeighbor, 1);
-                            }
-                        }
+                        SetNeighborCurrents(hex, FlowDirection.west, CurrentHeat.warm, FlowDirection.north);
+                        SetNeighborCurrents(hex, FlowDirection.east, CurrentHeat.cold, FlowDirection.south);
                     }
-
-                    if (rightNeighbor.tile.submerged)  // This tile is on the right side of land.
+                    else
                     {
-                        rightNeighbor.tile.currentHeat = CurrentHeat.warm;
-
-                        if (hex.center.pos.y >= equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(rightNeighbor, 3))
-                            {
-                                CheckNeighborSubmerge(rightNeighbor, 4);
-                            }
-                        }
-                        else if (hex.center.pos.y < equatorY)
-                        {
-                            if (!CheckNeighborSubmerge(rightNeighbor, 0))
-                            {
-                                CheckNeighborSubmerge(rightNeighbor, 1);
-                            }
-                        }
+                        SetNeighborCurrents(hex, FlowDirection.west, CurrentHeat.warm, FlowDirection.south);
+                        SetNeighborCurrents(hex, FlowDirection.east, CurrentHeat.cold, FlowDirection.north);
                     }
-
                 }
             }
-
-
-            if (currentHeat == CurrentHeat.warm)
+            else if (!hex.pent)
             {
-                Debug.Log("Tile is warm.");
+                if (windMagnitude > windCurrentCutoff)
+                {
+                    currentHeat = CurrentHeat.lukewarm;
+                    currentDirection = windDirection;
+                }
+            }
+        }
+
+        public void ColorCurrents()
+        {
+            if (currentHeat == CurrentHeat.warm && submerged)
+            {
                 hex.currentColor = Color.red;
             }
-            else if (currentHeat == CurrentHeat.cold)
+            else if (currentHeat == CurrentHeat.cold && submerged)
             {
-                Debug.Log("Tile is cold.");
                 hex.currentColor = Color.cyan;
+            }
+            else if (currentHeat == CurrentHeat.mixed && submerged)
+            {
+                hex.currentColor = Color.magenta;
+            }
+            else if (currentHeat == CurrentHeat.lukewarm && submerged)
+            {
+                hex.currentColor = Color.green;
             }
             else
             {
@@ -219,19 +280,191 @@ namespace DeadReckoning.Map
             }
         }
 
-        bool CheckNeighborSubmerge(Hex h, int neighboy) // That's not a typo.
+        void SetNeighborCurrents(Hex h, FlowDirection neighborDirection, CurrentHeat heat, FlowDirection direction)
         {
             // Come up with a way to better map the currents on the coast.
 
-            if (h.neighbors[neighboy].tile.submerged)
+            int[] neighborInds = new int[] { 1, 2, 3 };
+
+            if (neighborDirection == FlowDirection.east)
             {
-                h.tile.currentDirection = h.neighbors[neighboy].tile;
-                return true;
+                neighborInds = new int[] { 0, 5, 4 };
+            }
+            else if (neighborDirection == FlowDirection.north)
+            {
+                neighborInds = new int[] { 2, 1, 0, 5 };
+            }
+            else if (neighborDirection == FlowDirection.south)
+            {
+                neighborInds = new int[] { 2, 3, 4, 5 };
             }
 
-            return false;
+            for (int i = 0; i < neighborInds.Length; i++)
+            {
+                if (h.neighbors[neighborInds[i]].tile.submerged)
+                {
+                    if (!h.tile.submerged)
+                    {
+                        h.tile.shore = true; // Used to determine precipitation.
+                        currentDirection = neighborDirection; // Used to find onshore / offshore winds.
+                    }
+
+                    if (h.neighbors[neighborInds[i]].tile.currentHeat == CurrentHeat.none)
+                    {
+                        h.neighbors[neighborInds[i]].tile.currentHeat = heat;
+                    }
+                    else if (h.neighbors[neighborInds[i]].tile.currentHeat == CurrentHeat.warm && heat == CurrentHeat.cold
+                          || h.neighbors[neighborInds[i]].tile.currentHeat == CurrentHeat.cold && heat == CurrentHeat.warm)
+                    {
+                        h.neighbors[neighborInds[i]].tile.currentHeat = CurrentHeat.mixed;
+                    }
+
+                    h.neighbors[neighborInds[i]].tile.currentDirection = direction;
+                }
+            }
         }
+
+        public void DetermineBiomes(HexSphereGenerator hGen)
+        {
+            precipitation = EstimatePrecipitation();
+            temperature = EstimateTemperature(hGen);
+        }
+
+        public Gradient EstimateTemperature(HexSphereGenerator hGen)
+        {
+            float posY = hex.center.pos.y;
+            float equatorY = hGen.transform.position.y;
+            float worldRadius = hGen.worldRadius;
+
+            int temperatureEstimate;
+
+            float midPoint;
+
+            if (posY >= equatorY)
+            {
+                midPoint = worldRadius * 0.5f;
+
+                temperatureEstimate = Mathf.RoundToInt(1 - ((posY - equatorY) / midPoint));
+            }
+            else
+            {
+                midPoint = -worldRadius * 0.5f;
+
+                temperatureEstimate = Mathf.RoundToInt(1 - ((posY - equatorY) / midPoint));
+            }
+
+            if (!shore)
+            {
+                temperatureEstimate++;
+            }
+            else
+            {
+                temperatureEstimate--;
+            }
+
+            if (temperatureEstimate >= map.settings.veryHighTemperatureCutoff)
+            {
+                hex.temperatureColor = Color.red;
+                return Gradient.veryHigh;
+            }
+            else if (temperatureEstimate >= map.settings.highTemperatureCutoff)
+            {
+                hex.temperatureColor = Color.yellow;
+                return Gradient.high;
+            }
+            else if (temperatureEstimate <= map.settings.lowTemperatureCutoff)
+            {
+                hex.temperatureColor = Color.cyan;
+                return Gradient.low;
+            }
+            else if (temperatureEstimate <= map.settings.veryLowTemperatureCutoff)
+            {
+                hex.temperatureColor = Color.blue;
+                return Gradient.veryLow;
+            }
+            else
+            {
+                hex.temperatureColor = Color.green;
+                return Gradient.mid;
+            }
+        }
+        public Gradient EstimatePrecipitation()
+        {
+            float windPressureCutoff = 0.75f;
+            int precipitationEstimate = 0;
+
+            if (shore && currentHeat == CurrentHeat.warm)
+            {
+                precipitationEstimate++;
+            }
+            else if (shore && currentHeat == CurrentHeat.cold)
+            {
+                precipitationEstimate--;
+            }
+
+            if (shore && windDirection != currentDirection) // Onshore winds.
+            {
+                precipitationEstimate++;
+            }
+            if (shore && windDirection == currentDirection) // Offshore winds.
+            {
+                precipitationEstimate--;
+            }
+
+            if (windType == WindType.trade && windMagnitude >= windPressureCutoff
+                || windType == WindType.easterly && windMagnitude >= windPressureCutoff) // Low pressure areas (equator and polar fronts)
+            {
+                precipitationEstimate++;
+            }
+            else if (windType == WindType.westerly && windMagnitude >= windPressureCutoff) // High pressure areas (subtropical ridges)
+            {
+                precipitationEstimate--;
+            }
+
+            if (precipitationEstimate >= map.settings.veryHighPrecipitationCutoff)
+            {
+                hex.precipitationColor = Color.blue;
+                return Gradient.veryHigh;
+            }
+            else if (precipitationEstimate >= map.settings.highPrecipitationCutoff)
+            {
+                hex.precipitationColor = Color.cyan;
+                return Gradient.high;
+            }
+            else if (precipitationEstimate <= map.settings.lowPrecipitationCutoff)
+            {
+                hex.precipitationColor = Color.yellow;
+                return Gradient.low;
+            }
+            else if (precipitationEstimate <= map.settings.veryLowPrecipitationCutoff)
+            {
+                hex.precipitationColor = Color.red;
+                return Gradient.veryLow;
+            }
+            else
+            {
+                hex.precipitationColor = Color.green;
+                return Gradient.mid;
+            }
+        }
+
         #endregion
+    }
+
+    public class TectonicPlate
+    {
+        public List<Tile> tiles;
+
+        public Color color;
+
+        public TectonicPlate(Tile t)
+        {
+            tiles = new List<Tile>();
+
+            tiles.Add(t);
+
+            t.plate = this;
+        }
     }
 
     public class Resource

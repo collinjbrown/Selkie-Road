@@ -31,6 +31,18 @@ namespace DeadReckoning.WorldGeneration
 
         [HideInInspector]
         public Color[] mapColors;
+        [HideInInspector]
+        public Color[] windColors;
+        [HideInInspector]
+        public Color[] currentColors;
+        [HideInInspector]
+        public Color[] biomeColors;
+        [HideInInspector]
+        public Color[] temperatureColors;
+        [HideInInspector]
+        public Color[] precipitationColors;
+        [HideInInspector]
+        public Color[] plateColors;
 
         [HideInInspector]
         public Vector3[] wallVerts;
@@ -40,13 +52,11 @@ namespace DeadReckoning.WorldGeneration
         #endregion
 
         #region Rendering
-        public void Render(bool hex, bool map)
+        public void Render(bool hex)
         {
             // Displays the chunk in the world.
-            if (map)
-            {
-                MapVertsAndTris(hex);
-            }
+
+            MapVertsAndTris(hex);
 
             Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
 
@@ -68,64 +78,46 @@ namespace DeadReckoning.WorldGeneration
             meshCol.sharedMesh = mesh;
         }
 
-        public void UpdateColors(bool render, GlobeCamera.Lens lens)
+        public void UpdateColors(GlobeCamera.Lens lens)
         {
-            mapColors = new Color[mapVerts.Length];
+            Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
 
-            int vertOffset = 0;
+            mesh.Clear();
+            mesh.vertices = mapVerts;
+            mesh.triangles = mapTris;
 
-            for (int t = 0; t < hexes.Length; t++)
+            if (lens == GlobeCamera.Lens.plain)
             {
-                Hex h = hexes[t];
-                Color hColor = Color.white;
-
-                if (lens == GlobeCamera.Lens.plain)
-                {
-                    hColor = h.color;
-                }
-                else if (lens == GlobeCamera.Lens.winds)
-                {
-                    hColor = h.windColor;
-                }
-                else if (lens == GlobeCamera.Lens.currents)
-                {
-                    hColor = h.currentColor;
-                }
-                else if (lens == GlobeCamera.Lens.biomes)
-                {
-                    hColor = h.biomeColor;
-                }
-
-                mapColors[(t * 13) + 0 + vertOffset] = hColor;
-                mapColors[(t * 13) + 1 + vertOffset] = hColor;
-                mapColors[(t * 13) + 2 + vertOffset] = hColor;
-                mapColors[(t * 13) + 3 + vertOffset] = hColor;
-                mapColors[(t * 13) + 4 + vertOffset] = hColor;
-                mapColors[(t * 13) + 5 + vertOffset] = hColor;
-                mapColors[(t * 13) + 6 + vertOffset] = hColor;
-                mapColors[(t * 13) + 7 + vertOffset] = hColor;
-                mapColors[(t * 13) + 8 + vertOffset] = hColor;
-                mapColors[(t * 13) + 9 + vertOffset] = hColor;
-
-
-                // Recheck listings.
-                if (!h.pent)
-                {
-                    mapColors[(t * 13) + 10 + vertOffset] = hColor;
-                    mapColors[(t * 13) + 11 + vertOffset] = hColor;
-                    mapColors[(t * 13) + 12 + vertOffset] = hColor;
-
-                    vertOffset = 0;
-                }
-                else
-                {
-                    mapColors[(t * 13) + 10 + vertOffset] = hColor;
-
-                    vertOffset = -2;
-                }
+                mesh.colors = mapColors;
+            }
+            else if (lens == GlobeCamera.Lens.winds)
+            {
+                mesh.colors = windColors;
+            }
+            else if (lens == GlobeCamera.Lens.currents)
+            {
+                mesh.colors = currentColors;
+            }
+            else if (lens == GlobeCamera.Lens.biomes)
+            {
+                mesh.colors = biomeColors;
+            }
+            else if (lens == GlobeCamera.Lens.temperature)
+            {
+                mesh.colors = temperatureColors;
+            }
+            else if (lens == GlobeCamera.Lens.precipitation)
+            {
+                mesh.colors = precipitationColors;
+            }
+            else if (lens == GlobeCamera.Lens.plates)
+            {
+                mesh.colors = plateColors;
             }
 
-            Render(true, false);
+            // mesh.Optimize();
+            mesh.RecalculateNormals();
+            // mesh.RecalculateBounds();
         }
 
         public void MapVertsAndTris(bool hex)
@@ -172,6 +164,12 @@ namespace DeadReckoning.WorldGeneration
                 mapVerts = new Vector3[(hexes.Length * (12 + 1)) + vMod];
                 mapTris = new int[(hexes.Length * (12 * 3)) + tMod];
                 mapColors = new Color[mapVerts.Length];
+                windColors = new Color[mapVerts.Length];
+                currentColors = new Color[mapVerts.Length];
+                biomeColors = new Color[mapVerts.Length];
+                temperatureColors = new Color[mapVerts.Length];
+                precipitationColors = new Color[mapVerts.Length];
+                plateColors = new Color[mapVerts.Length];
 
                 int vertOffset = 0; // Used to make sure there aren't gaps in the tri array due to pentagons.
                 int triOffset = 0;
@@ -201,6 +199,88 @@ namespace DeadReckoning.WorldGeneration
                     mapColors[(t * 13) + 7 + vertOffset] = h.color;
                     mapColors[(t * 13) + 8 + vertOffset] = h.color;
                     mapColors[(t * 13) + 9 + vertOffset] = h.color;
+
+                    windColors[(t * 13) + 0 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 1 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 2 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 3 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 4 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 5 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 6 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 7 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 8 + vertOffset] = h.windColor;
+                    windColors[(t * 13) + 9 + vertOffset] = h.windColor;
+
+                    currentColors[(t * 13) + 0 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 1 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 2 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 3 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 4 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 5 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 6 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 7 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 8 + vertOffset] = h.currentColor;
+                    currentColors[(t * 13) + 9 + vertOffset] = h.currentColor;
+
+                    biomeColors[(t * 13) + 0 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 1 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 2 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 3 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 4 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 5 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 6 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 7 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 8 + vertOffset] = h.biomeColor;
+                    biomeColors[(t * 13) + 9 + vertOffset] = h.biomeColor;
+
+                    precipitationColors[(t * 13) + 0 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 1 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 2 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 3 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 4 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 5 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 6 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 7 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 8 + vertOffset] = h.precipitationColor;
+                    precipitationColors[(t * 13) + 9 + vertOffset] = h.precipitationColor;
+
+                    temperatureColors[(t * 13) + 0 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 1 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 2 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 3 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 4 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 5 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 6 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 7 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 8 + vertOffset] = h.temperatureColor;
+                    temperatureColors[(t * 13) + 9 + vertOffset] = h.temperatureColor;
+
+                    if (h.tile.plate != null)
+                    {
+                        plateColors[(t * 13) + 0 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 1 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 2 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 3 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 4 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 5 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 6 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 7 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 8 + vertOffset] = h.tile.plate.color;
+                        plateColors[(t * 13) + 9 + vertOffset] = h.tile.plate.color;
+                    }
+                    else
+                    {
+                        plateColors[(t * 13) + 0 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 1 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 2 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 3 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 4 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 5 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 6 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 7 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 8 + vertOffset] = Color.white;
+                        plateColors[(t * 13) + 9 + vertOffset] = Color.white;
+                    }
 
                     // Triangle One (A - BC - B)
                     mapTris[(t * 36) + 0 + triOffset] = (t * 13) + 0 + vertOffset;
@@ -253,6 +333,39 @@ namespace DeadReckoning.WorldGeneration
                         mapColors[(t * 13) + 11 + vertOffset] = h.color;
                         mapColors[(t * 13) + 12 + vertOffset] = h.color;
 
+                        windColors[(t * 13) + 10 + vertOffset] = h.windColor;
+                        windColors[(t * 13) + 11 + vertOffset] = h.windColor;
+                        windColors[(t * 13) + 12 + vertOffset] = h.windColor;
+
+                        currentColors[(t * 13) + 10 + vertOffset] = h.currentColor;
+                        currentColors[(t * 13) + 11 + vertOffset] = h.currentColor;
+                        currentColors[(t * 13) + 12 + vertOffset] = h.currentColor;
+
+                        biomeColors[(t * 13) + 10 + vertOffset] = h.biomeColor;
+                        biomeColors[(t * 13) + 11 + vertOffset] = h.biomeColor;
+                        biomeColors[(t * 13) + 12 + vertOffset] = h.biomeColor;
+
+                        temperatureColors[(t * 13) + 10 + vertOffset] = h.temperatureColor;
+                        temperatureColors[(t * 13) + 11 + vertOffset] = h.temperatureColor;
+                        temperatureColors[(t * 13) + 12 + vertOffset] = h.temperatureColor;
+
+                        precipitationColors[(t * 13) + 10 + vertOffset] = h.precipitationColor;
+                        precipitationColors[(t * 13) + 11 + vertOffset] = h.precipitationColor;
+                        precipitationColors[(t * 13) + 12 + vertOffset] = h.precipitationColor;
+
+                        if (h.tile.plate != null)
+                        {
+                            plateColors[(t * 13) + 10 + vertOffset] = h.tile.plate.color;
+                            plateColors[(t * 13) + 11 + vertOffset] = h.tile.plate.color;
+                            plateColors[(t * 13) + 12 + vertOffset] = h.tile.plate.color;
+                        }
+                        else
+                        {
+                            plateColors[(t * 13) + 10 + vertOffset] = Color.white;
+                            plateColors[(t * 13) + 11 + vertOffset] = Color.white;
+                            plateColors[(t * 13) + 12 + vertOffset] = Color.white;
+                        }
+
                         // Triangle Nine (A - FG - F)
                         mapTris[(t * 36) + 24 + triOffset] = (t * 13) + 0 + vertOffset;
                         mapTris[(t * 36) + 25 + triOffset] = (t * 13) + 11 + vertOffset;
@@ -281,6 +394,25 @@ namespace DeadReckoning.WorldGeneration
                         mapVerts[(t * 13) + 10 + vertOffset] = (h.vertices[4].pos + h.vertices[0].pos) / 2.0f;  // FB
 
                         mapColors[(t * 13) + 10 + vertOffset] = h.color;
+
+                        windColors[(t * 13) + 10 + vertOffset] = h.windColor;
+
+                        currentColors[(t * 13) + 10 + vertOffset] = h.currentColor;
+
+                        biomeColors[(t * 13) + 10 + vertOffset] = h.biomeColor;
+
+                        precipitationColors[(t * 13) + 10 + vertOffset] = h.precipitationColor;
+
+                        temperatureColors[(t * 13) + 10 + vertOffset] = h.temperatureColor;
+
+                        if (h.tile.plate != null)
+                        {
+                            plateColors[(t * 13) + 10 + vertOffset] = h.tile.plate.color;
+                        }
+                        else
+                        {
+                            plateColors[(t * 13) + 10 + vertOffset] = Color.white;
+                        }
 
                         // Triangle Nine (A - FB - F)
                         mapTris[(t * 36) + 24 + triOffset] = (t * 13) + 0 + vertOffset;
@@ -433,7 +565,7 @@ namespace DeadReckoning.WorldGeneration
                 hexCenters.Add(newHex.center.pos, newHex);
                 hexes[hFound] = newHex;
                 hGen.unsortedHexes.Add(newHex);
-                // hFound++;
+                hFound++;
             }
             else if (number == 19)
             {
@@ -462,7 +594,7 @@ namespace DeadReckoning.WorldGeneration
                 hexCenters.Add(newHex.center.pos, newHex);
                 hexes[hFound] = newHex;
                 hGen.unsortedHexes.Add(newHex);
-                // hFound++;
+                hFound++;
             }
         }
 
@@ -498,6 +630,29 @@ namespace DeadReckoning.WorldGeneration
                 Vector3 normal = (hex.center.pos - hGen.gameObject.transform.position).normalized;
 
                 int intElev = Mathf.RoundToInt(elevation);
+
+                if (hex.tile.fault)
+                {
+                    float weathering = 1;
+
+                    if (hex.tile.shore)
+                    {
+                        weathering = noiseSettings.mountainWeathering;
+                    }
+
+                    intElev = Mathf.RoundToInt(Mathf.Abs(intElev + (intElev * (noiseSettings.mountainBuff * weathering))));
+                }
+                else if (hex.tile.faultAdjacent)
+                {
+                    float weathering = 1;
+
+                    if (hex.tile.shore)
+                    {
+                        weathering = noiseSettings.mountainWeathering;
+                    }
+
+                    intElev = Mathf.RoundToInt(Mathf.Abs(intElev + (intElev * (noiseSettings.mountainSloping * weathering))));
+                }
 
                 if (intElev % noiseSettings.terraceCutoff != 0)
                 {
@@ -682,6 +837,11 @@ namespace DeadReckoning.WorldGeneration
 
                 // Sorts a hex's neighbors from the top, clockwise.
                 Hex[] sortedNeighbors = new Hex[6];
+
+                if (center.pent)
+                {
+                    sortedNeighbors = new Hex[5];
+                }
 
                 Vector3[] axes = FindRelativeAxes(center.center);
 
