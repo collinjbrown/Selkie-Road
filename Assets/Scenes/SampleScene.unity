@@ -379,7 +379,7 @@ MonoBehaviour:
   generatePlanet: 1
   hexes: 0
   subdivideDepth: 6
-  oceanDepth: 0.8
+  oceanDepth: 0.78
   worldRadius: 80
   hexChunkPrefab: {fileID: 1071003511907024834, guid: bd94ba70046e9ca42b0c6bc3c07c5bbb,
     type: 3}
@@ -388,15 +388,15 @@ MonoBehaviour:
     type: 3}
   chunks: []
   noiseSettings:
-    seed: 0
+    seed: 1001
     strength: 15
     numLayers: 5
     baseRoughness: 0.05
-    roughness: 0.75
+    roughness: 0.5
     persistence: 0.75
     center: {x: 0, y: 0, z: 0}
     minValue: 1
-    maxValue: 4
+    maxValue: 2
     terracing: 0
     terraceCutoff: 2
   maxContDist: 0

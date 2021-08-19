@@ -4,140 +4,123 @@ using UnityEngine;
 using System.Diagnostics;
 using System.Linq;
 
-public class HexSphereGenerator : MonoBehaviour
+namespace DeadReckoning.WorldGeneration
 {
-    public bool isPlanet;
-
-    public bool generate;
-    public bool generatePlanet;
-    public bool hexes;
-
-    public int subdivideDepth;
-    public float oceanDepth;
-    public float worldRadius;
-
-    public GameObject hexChunkPrefab;
-    public Material chunkMaterial;
-    public GameObject planetPrefab;
-
-    [HideInInspector]
-    public List<Hex> unsortedHexes;
-    public Hex[,] map;
-
-    [HideInInspector]
-    public List<HexChunk> chunks;
-
-    [HideInInspector]
-    public Dictionary<Vector3, Hex> vertHexes;
-
-    [HideInInspector]
-    public Dictionary<Vector3, List<Triangle>> vecTriangleNeighbors;
-
-    public NoiseSettings noiseSettings;
-    NoiseFilter noiseFilter;
-
-    [HideInInspector]
-    public float maxContDist;
-
-    [HideInInspector]
-    public float oceanRadius;
-
-
-    void Start()
+    public class HexSphereGenerator : MonoBehaviour
     {
-        // Starts the generation process (if that's something we want).
+        public bool isPlanet;
 
-        if (generate)
+        public bool generate;
+        public bool generatePlanet;
+        public bool hexes;
+
+        public int subdivideDepth;
+        public float oceanDepth;
+        public float worldRadius;
+
+        public GameObject hexChunkPrefab;
+        public Material chunkMaterial;
+        public GameObject planetPrefab;
+        public NoiseSettings noiseSettings;
+
+        #region Hidden Variables
+        [HideInInspector]
+        public List<Map.Tile> primitiveTiles;
+        [HideInInspector]
+        public List<Hex> unsortedHexes;
+        [HideInInspector]
+        public Hex[,] map;
+        [HideInInspector]
+        public List<HexChunk> chunks;
+        [HideInInspector]
+        public Dictionary<Vector3, Hex> vertHexes;
+        [HideInInspector]
+        public Dictionary<Vector3, List<Triangle>> vecTriangleNeighbors;
+        [HideInInspector]
+        NoiseFilter noiseFilter;
+        [HideInInspector]
+        public float maxContDist;
+        [HideInInspector]
+        public float oceanRadius;
+        #endregion
+
+        #region General Generation
+        void Start()
         {
-            Stopwatch gt = new Stopwatch();
-            gt.Start();
+            // Starts the generation process (if that's something we want).
 
-            Generate();
-
-            gt.Stop();
-            UnityEngine.Debug.Log($"Ocean generation took {gt.ElapsedMilliseconds} milliseconds.");
-        }
-
-        if (generatePlanet)
-        {
-            Stopwatch pt = new Stopwatch();
-            pt.Start();
-
-            GeneratePlanet();
-
-            pt.Stop();
-            UnityEngine.Debug.Log($"Planet generation took {pt.ElapsedMilliseconds} milliseconds.");
-        }
-    }
-
-    public void Generate()
-    {
-        // Generates the world.
-        vertHexes = new Dictionary<Vector3, Hex>();
-        noiseFilter = new NoiseFilter(noiseSettings);
-        unsortedHexes = new List<Hex>();
-
-        for (int i = 0; i < icoTris.Length; i += 3)
-        {
-            // Sets up all the necessary chunks and their values.
-
-            GameObject g = Instantiate(hexChunkPrefab, this.transform.position, Quaternion.identity, this.gameObject.transform);
-            g.GetComponent<MeshRenderer>().material = chunkMaterial;
-
-            HexChunk c = g.GetComponent<HexChunk>();
-
-            c.triangles = new Triangle[1];
-            c.triangles[0] = new Triangle(new Vertex(icoVerts[icoTris[i]]), new Vertex(icoVerts[icoTris[i + 1]]), new Vertex(icoVerts[icoTris[i + 2]]));
-
-            c.origin = c.triangles[0];
-
-            // c.neighbors = c.FindNeighbors(chunks.Count);
-            // We no longer need to find neighbors, so this won't be necessary.
-
-            c.number = chunks.Count;
-            c.color = Color.Lerp(Color.Lerp(Color.red, Color.yellow, 0.5f), Color.green, 0.25f);
-
-            if (!isPlanet)
+            if (generate)
             {
-                c.gameObject.GetComponent<MeshCollider>().enabled = false;
+                Stopwatch gt = new Stopwatch();
+                gt.Start();
+
+                Generate();
+
+                gt.Stop();
+                UnityEngine.Debug.Log($"Ocean generation took {gt.ElapsedMilliseconds} milliseconds.");
             }
 
-            chunks.Add(c);
-        }
-
-        for (int d = 0; d < subdivideDepth; d++)
-        {
-            // Calls each chunk's subdivision method.
-
-            foreach(HexChunk c in chunks)
+            if (generatePlanet)
             {
-                c.Subdivide(worldRadius);
+                Stopwatch pt = new Stopwatch();
+                pt.Start();
+
+                GeneratePlanet();
+
+                pt.Stop();
+                UnityEngine.Debug.Log($"Planet generation took {pt.ElapsedMilliseconds} milliseconds.");
             }
         }
 
-        if (hexes)
+        public void Generate()
         {
-            // This should only ever be called right before making hexes.
-            FindNeighbors();
+            // Generates the world.
+            vertHexes = new Dictionary<Vector3, Hex>();
+            noiseFilter = new NoiseFilter(noiseSettings);
+            unsortedHexes = new List<Hex>();
+            primitiveTiles = new List<Map.Tile>();
 
-            foreach (HexChunk c in chunks)
+            for (int i = 0; i < icoTris.Length; i += 3)
             {
-                c.Hexify(this);
+                // Sets up all the necessary chunks and their values.
+
+                GameObject g = Instantiate(hexChunkPrefab, this.transform.position, Quaternion.identity, this.gameObject.transform);
+                g.GetComponent<MeshRenderer>().material = chunkMaterial;
+
+                HexChunk c = g.GetComponent<HexChunk>();
+
+                c.triangles = new Triangle[1];
+                c.triangles[0] = new Triangle(new Vertex(icoVerts[icoTris[i]]), new Vertex(icoVerts[icoTris[i + 1]]), new Vertex(icoVerts[icoTris[i + 2]]));
+
+                c.origin = c.triangles[0];
+
+                // c.neighbors = c.FindNeighbors(chunks.Count);
+                // We no longer need to find neighbors, so this won't be necessary.
+
+                c.number = chunks.Count;
+                c.color = Color.Lerp(Color.Lerp(Color.red, Color.yellow, 0.5f), Color.green, 0.25f);
+
+                if (!isPlanet)
+                {
+                    c.gameObject.GetComponent<MeshCollider>().enabled = false;
+                }
+
+                chunks.Add(c);
             }
 
-            foreach (HexChunk c in chunks)
+            for (int d = 0; d < subdivideDepth; d++)
             {
-                c.SortHexNeighbors();
+                // Calls each chunk's subdivision method.
 
-                c.Render(true, true);
+                foreach (HexChunk c in chunks)
+                {
+                    c.Subdivide(worldRadius);
+                }
             }
-        }
-        else
-        {
-            if (isPlanet)
+
+            if (hexes)
             {
-                // I think the problem is in the effect noise has on the neighbor dictionary.
-                // AddNoise();
+                // This should only ever be called right before making hexes.
                 FindNeighbors();
 
                 foreach (HexChunk c in chunks)
@@ -149,106 +132,133 @@ public class HexSphereGenerator : MonoBehaviour
                 {
                     c.SortHexNeighbors();
 
-                    c.AddHexNoise(noiseFilter, noiseSettings, this);
-
                     c.Render(true, true);
                 }
             }
             else
             {
-                foreach (HexChunk c in chunks)
+                if (isPlanet)
                 {
-                    c.Render(false, true);
+                    FindNeighbors();
+
+                    foreach (HexChunk c in chunks)
+                    {
+                        c.Hexify(this);
+                    }
+
+                    foreach (HexChunk c in chunks)
+                    {
+                        c.SortHexNeighbors();
+
+                        c.AddHexNoise(noiseFilter, noiseSettings, this);
+                        c.CreateMapTiles(this);
+
+                        c.Render(true, true);
+                    }
+
+                    // I feel like we should do something more with this, but we'll get there eventually.
+                    Map.TileMap map = new Map.TileMap(primitiveTiles);
+                }
+                else
+                {
+                    foreach (HexChunk c in chunks)
+                    {
+                        c.Render(false, true);
+                    }
                 }
             }
         }
-    }
 
-    public void GeneratePlanet()
-    {
-        GameObject g = Instantiate(planetPrefab, this.gameObject.transform.position, Quaternion.identity, this.transform);
-
-        HexSphereGenerator planetGenerator = g.GetComponent<HexSphereGenerator>();
-
-        planetGenerator.worldRadius = worldRadius * oceanDepth;
-
-        if (!planetGenerator.hexes)
+        public void GeneratePlanet()
         {
-            planetGenerator.noiseSettings = noiseSettings;
-        }
+            GameObject g = Instantiate(planetPrefab, this.gameObject.transform.position, Quaternion.identity, this.transform);
 
-        planetGenerator.isPlanet = true;
-        planetGenerator.maxContDist = maxContDist;
-        planetGenerator.oceanRadius = worldRadius;
+            HexSphereGenerator planetGenerator = g.GetComponent<HexSphereGenerator>();
 
-        planetGenerator.Generate();
+            planetGenerator.worldRadius = worldRadius * oceanDepth;
 
-        foreach(HexChunk c in planetGenerator.chunks)
-        {
-            c.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-        }
-    }
-
-    public void FindNeighbors()
-    {
-        // Finds all the neighbors to a vertex (for making hexes, afterwards).
-
-        vecTriangleNeighbors = new Dictionary<Vector3, List<Triangle>>();
-
-        foreach (HexChunk c in chunks)
-        {
-            for (int i = 0; i < c.triangles.Length; i++)
+            if (!planetGenerator.hexes)
             {
-                Triangle t = c.triangles[i];
+                planetGenerator.noiseSettings = noiseSettings;
+            }
 
-                if (vecTriangleNeighbors.ContainsKey(t.vA.pos))
+            planetGenerator.isPlanet = true;
+            planetGenerator.maxContDist = maxContDist;
+            planetGenerator.oceanRadius = worldRadius;
+
+            planetGenerator.Generate();
+
+            foreach (HexChunk c in planetGenerator.chunks)
+            {
+                c.gameObject.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            }
+        }
+        #endregion
+
+        #region Finding Neighbors
+        public void FindNeighbors()
+        {
+            // Finds all the neighbors to a vertex (for making hexes, afterwards).
+
+            vecTriangleNeighbors = new Dictionary<Vector3, List<Triangle>>();
+
+            foreach (HexChunk c in chunks)
+            {
+                for (int i = 0; i < c.triangles.Length; i++)
                 {
-                    if (!vecTriangleNeighbors[t.vA.pos].Contains(t))
+                    Triangle t = c.triangles[i];
+
+                    if (vecTriangleNeighbors.ContainsKey(t.vA.pos))
                     {
+                        if (!vecTriangleNeighbors[t.vA.pos].Contains(t))
+                        {
+                            vecTriangleNeighbors[t.vA.pos].Add(t);
+                        }
+                    }
+                    else
+                    {
+                        vecTriangleNeighbors.Add(t.vA.pos, new List<Triangle>());
                         vecTriangleNeighbors[t.vA.pos].Add(t);
                     }
-                }
-                else
-                {
-                    vecTriangleNeighbors.Add(t.vA.pos, new List<Triangle>());
-                    vecTriangleNeighbors[t.vA.pos].Add(t);
-                }
 
-                if (vecTriangleNeighbors.ContainsKey(t.vB.pos))
-                {
-                    if (!vecTriangleNeighbors[t.vB.pos].Contains(t))
+                    if (vecTriangleNeighbors.ContainsKey(t.vB.pos))
                     {
+                        if (!vecTriangleNeighbors[t.vB.pos].Contains(t))
+                        {
+                            vecTriangleNeighbors[t.vB.pos].Add(t);
+                        }
+                    }
+                    else
+                    {
+                        vecTriangleNeighbors.Add(t.vB.pos, new List<Triangle>());
                         vecTriangleNeighbors[t.vB.pos].Add(t);
                     }
-                }
-                else
-                {
-                    vecTriangleNeighbors.Add(t.vB.pos, new List<Triangle>());
-                    vecTriangleNeighbors[t.vB.pos].Add(t);
-                }
 
-                if (vecTriangleNeighbors.ContainsKey(t.vC.pos))
-                {
-                    if (!vecTriangleNeighbors[t.vC.pos].Contains(t))
+                    if (vecTriangleNeighbors.ContainsKey(t.vC.pos))
                     {
+                        if (!vecTriangleNeighbors[t.vC.pos].Contains(t))
+                        {
+                            vecTriangleNeighbors[t.vC.pos].Add(t);
+                        }
+                    }
+                    else
+                    {
+                        vecTriangleNeighbors.Add(t.vC.pos, new List<Triangle>());
                         vecTriangleNeighbors[t.vC.pos].Add(t);
                     }
                 }
-                else
-                {
-                    vecTriangleNeighbors.Add(t.vC.pos, new List<Triangle>());
-                    vecTriangleNeighbors[t.vC.pos].Add(t);
-                }
             }
         }
-    }
+        #endregion
 
-    static float t = 100.0f;
-    static float r = t * 0.89441592209664961889545770584312f;
-    static float q = 0.447215f;
+        #region Icosahedron Data
 
-    Vector3[] icoVerts = new Vector3[] // 12
-    {
+        static float t = 100.0f;
+        static float r = t * 0.89441592209664961889545770584312f;
+        static float q = 0.447215f;
+
+        Vector3[] icoVerts = new Vector3[] // 12
+        {
         new Vector3 (0,
             t,
             0),
@@ -285,9 +295,9 @@ public class HexSphereGenerator : MonoBehaviour
             r * Mathf.Sin(Mathf.Deg2Rad * (72 * 4 + 36))),
 
         new Vector3 (0, -t, 0)
-    };
+        };
 
-    int[] icoTris = new int[] { // 60
+        int[] icoTris = new int[] { // 60
         0,2,1,  // 1
         0,3,2,
         0,4,3,
@@ -312,130 +322,132 @@ public class HexSphereGenerator : MonoBehaviour
         11,10,6 // 20
     };
 
+        #endregion
 
-    #region No Longer Implemented
-    //public void CoordinateHexes()
-    //{
-    //    // This is broken.
+        #region No Longer Implemented
+        //public void CoordinateHexes()
+        //{
+        //    // This is broken.
 
-    //    // Takes the unsorted hexes' coordinates and puts them...
-    //    // in the map array for safe keeping.
+        //    // Takes the unsorted hexes' coordinates and puts them...
+        //    // in the map array for safe keeping.
 
-    //    List<Hex> coordinatedHexes = new List<Hex>();
+        //    List<Hex> coordinatedHexes = new List<Hex>();
 
-    //    RaycastHit hit;
-    //    Physics.Raycast(transform.position + new Vector3(0, -worldRadius * 2, 0), transform.TransformDirection(Vector3.up) * 1000.0f, out hit, Mathf.Infinity);
+        //    RaycastHit hit;
+        //    Physics.Raycast(transform.position + new Vector3(0, -worldRadius * 2, 0), transform.TransformDirection(Vector3.up) * 1000.0f, out hit, Mathf.Infinity);
 
-    //    Hex selectHex = hit.transform.gameObject.GetComponent<HexChunk>().ListNearestHex(hit.point);
+        //    Hex selectHex = hit.transform.gameObject.GetComponent<HexChunk>().ListNearestHex(hit.point);
 
-    //    map = new Hex[Mathf.RoundToInt(10 * Mathf.Pow(2, subdivideDepth)), 10 * Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth))];
+        //    map = new Hex[Mathf.RoundToInt(10 * Mathf.Pow(2, subdivideDepth)), 10 * Mathf.RoundToInt(Mathf.Pow(2, subdivideDepth))];
 
-    //    Camera cam = Camera.main;
+        //    Camera cam = Camera.main;
 
-    //    cam.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
-    //    cam.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(1, selectHex.center.pos * 2);
+        //    cam.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+        //    cam.gameObject.transform.GetChild(0).gameObject.GetComponent<LineRenderer>().SetPosition(1, selectHex.center.pos * 2);
 
-    //    while (coordinatedHexes.Count < vertHexes.Count)
-    //    {
-    //        coordinatedHexes.Add(selectHex);
-    //        map[selectHex.x, selectHex.y] = selectHex;
+        //    while (coordinatedHexes.Count < vertHexes.Count)
+        //    {
+        //        coordinatedHexes.Add(selectHex);
+        //        map[selectHex.x, selectHex.y] = selectHex;
 
-    //        if (!coordinatedHexes.Contains(selectHex.neighbors[2]))
-    //        {
-    //            selectHex.neighbors[2].x = selectHex.x + 1;
-    //            selectHex.neighbors[2].y = selectHex.y;
+        //        if (!coordinatedHexes.Contains(selectHex.neighbors[2]))
+        //        {
+        //            selectHex.neighbors[2].x = selectHex.x + 1;
+        //            selectHex.neighbors[2].y = selectHex.y;
 
-    //            selectHex = selectHex.neighbors[2];
-    //        }
-    //        else
-    //        {
-    //            selectHex.neighbors[1].x = selectHex.x;
-    //            selectHex.neighbors[1].y = selectHex.y + 1;
+        //            selectHex = selectHex.neighbors[2];
+        //        }
+        //        else
+        //        {
+        //            selectHex.neighbors[1].x = selectHex.x;
+        //            selectHex.neighbors[1].y = selectHex.y + 1;
 
-    //            selectHex = selectHex.neighbors[1];
-    //        }
-    //    }
-    //}
-    #endregion
-}
-
-public class Vertex
-{
-    public int x;
-    public int y;
-
-    public Vector3 pos;
-
-    public Vertex (Vector3 v)
-    {
-        pos = v;
+        //            selectHex = selectHex.neighbors[1];
+        //        }
+        //    }
+        //}
+        #endregion
     }
 
-    public void Normalize(float r)
+    public class Vertex
     {
-        pos = pos.normalized * r;
-    }
+        public int x;
+        public int y;
 
-}
+        public Vector3 pos;
 
-public class Hex
-{
-    public int x;
-    public int y;
-
-    public bool pent;
-
-    public Vertex center;
-
-    public Vertex[] vertices;
-
-    public Color color;
-
-    public List<Hex> neighbors = new List<Hex>();
-
-    public void AddNeighbor(Hex h)
-    {
-        if (!neighbors.Contains(h))
+        public Vertex(Vector3 v)
         {
-            neighbors.Add(h);
+            pos = v;
         }
 
-        if (!h.neighbors.Contains(this))
+        public void Normalize(float r)
         {
-            h.neighbors.Add(this);
+            pos = pos.normalized * r;
+        }
+
+    }
+
+    public class Hex
+    {
+        public int x;
+        public int y;
+
+        public bool pent;
+
+        public Vertex center;
+
+        public Vertex[] vertices;
+
+        public Color color;
+
+        public List<Hex> neighbors = new List<Hex>();
+
+        public void AddNeighbor(Hex h)
+        {
+            if (!neighbors.Contains(h))
+            {
+                neighbors.Add(h);
+            }
+
+            if (!h.neighbors.Contains(this))
+            {
+                h.neighbors.Add(this);
+            }
+        }
+
+        public void CalculateCenter()
+        {
+            Vector3 cU = new Vector3(0, 0, 0);
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                cU += vertices[i].pos;
+            }
+
+            center = new Vertex(cU / vertices.Length);
         }
     }
 
-    public void CalculateCenter()
+    public class Triangle
     {
-        Vector3 cU = new Vector3(0, 0, 0);
+        public Vertex vA;
+        public Vertex vB;
+        public Vertex vC;
 
-        for (int i = 0; i < vertices.Length; i++)
+        public Triangle(Vertex a, Vertex b, Vertex c)
         {
-            cU += vertices[i].pos;
+            vA = a;
+            vB = b;
+            vC = c;
         }
 
-        center = new Vertex(cU / vertices.Length);
-    }
-}
-
-public class Triangle
-{
-    public Vertex vA;
-    public Vertex vB;
-    public Vertex vC;
-
-    public Triangle(Vertex a, Vertex b, Vertex c)
-    {
-        vA = a;
-        vB = b;
-        vC = c;
-    }
-
-    public void NormalizeVertices(float radius)
-    {
-        vA.Normalize(radius);
-        vB.Normalize(radius);
-        vC.Normalize(radius);
+        public void NormalizeVertices(float radius)
+        {
+            vA.Normalize(radius);
+            vB.Normalize(radius);
+            vC.Normalize(radius);
+        }
     }
 }
