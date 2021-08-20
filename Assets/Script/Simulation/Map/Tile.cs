@@ -404,7 +404,7 @@ namespace DeadReckoning.Map
             }
 
             hex.biomeColor = c;
-            hex.uv = new Vector3(0, 0, (int)bio);
+            hex.uv = new Vector2((int)bio, 0);
         }
 
         public void DetermineBiomes(HexSphereGenerator hGen)

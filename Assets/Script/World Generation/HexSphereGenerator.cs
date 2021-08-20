@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Diagnostics;
 using System.Linq;
+using UnityEditor;
 
 namespace DeadReckoning.WorldGeneration
 {
@@ -26,6 +27,34 @@ namespace DeadReckoning.WorldGeneration
 
         public NoiseSettings noiseSettings;
         public WorldbuildingSettings worldSettings;
+
+        #region Textures
+        public Texture2D[] textureArray;
+
+        private void CreateTextureArray()
+        {
+            Texture2DArray texture2DArray = new Texture2DArray(textureArray[0].width,
+                                                               textureArray[0].height,
+                                                               textureArray.Length,
+                                                               TextureFormat.RGBA32,
+                                                               true, false);
+
+            texture2DArray.filterMode = FilterMode.Bilinear;
+            texture2DArray.wrapMode = TextureWrapMode.Repeat;
+
+            for (int i = 0; i < textureArray.Length; i++)
+            {
+                texture2DArray.SetPixels(textureArray[i].GetPixels(0), i, 0);
+            }
+
+            texture2DArray.Apply();
+
+            foreach (HexChunk c in chunks)
+            {
+                c.gameObject.GetComponent<MeshRenderer>().material.SetTexture("_BiomeTextures", texture2DArray);
+            }
+        }
+        #endregion
 
         #region Hidden Variables
         [HideInInspector]
@@ -105,7 +134,7 @@ namespace DeadReckoning.WorldGeneration
                 // We no longer need to find neighbors, so this won't be necessary.
 
                 c.number = chunks.Count;
-                c.color = Color.Lerp(Color.Lerp(Color.red, Color.yellow, 0.5f), Color.green, 0.25f);
+                c.color = Color.white;
 
                 if (!isPlanet)
                 {
@@ -113,6 +142,11 @@ namespace DeadReckoning.WorldGeneration
                 }
 
                 chunks.Add(c);
+            }
+
+            if (isPlanet)
+            {
+                CreateTextureArray();
             }
 
             for (int d = 0; d < subdivideDepth; d++)
@@ -201,6 +235,8 @@ namespace DeadReckoning.WorldGeneration
             planetGenerator.isPlanet = true;
             planetGenerator.maxContDist = maxContDist;
             planetGenerator.oceanRadius = worldRadius;
+
+            planetGenerator.textureArray = textureArray;
 
             planetGenerator.Generate();
 
@@ -428,7 +464,7 @@ namespace DeadReckoning.WorldGeneration
 
         public Vertex[] vertices;
 
-        public Vector3 uv;
+        public Vector2 uv;
         public Color color;
         public Color windColor;
         public Color currentColor;

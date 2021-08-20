@@ -30,7 +30,9 @@ namespace DeadReckoning.WorldGeneration
         public int[] mapTris;
 
         [HideInInspector]
-        public Vector3[] mapUV;
+        public Vector2[] mapUV;
+        [HideInInspector]
+        public Vector2[] dummyUV;
         [HideInInspector]
         public Color[] mapColors;
         [HideInInspector]
@@ -93,42 +95,41 @@ namespace DeadReckoning.WorldGeneration
             if (lens == GlobeCamera.Lens.plain)
             {
                 mesh.SetUVs(0, mapUV);
-                // mesh.uv = mapUV;
-                mesh.colors = null;
+                mesh.colors = mapColors;
             }
-            if (lens == GlobeCamera.Lens.matte)
+            else if (lens == GlobeCamera.Lens.matte)
             {
-                mesh.uv = null;
+                mesh.uv = dummyUV;
                 mesh.colors = mapColors;
             }
             else if (lens == GlobeCamera.Lens.winds)
             {
-                mesh.uv = null;
+                mesh.uv = dummyUV;
                 mesh.colors = windColors;
             }
             else if (lens == GlobeCamera.Lens.currents)
             {
-                mesh.uv = null;
+                mesh.uv = dummyUV;
                 mesh.colors = currentColors;
             }
             else if (lens == GlobeCamera.Lens.biomes)
             {
-                mesh.uv = null;
+                mesh.uv = dummyUV;
                 mesh.colors = biomeColors;
             }
             else if (lens == GlobeCamera.Lens.temperature)
             {
-                mesh.uv = null;
+                mesh.uv = dummyUV;
                 mesh.colors = temperatureColors;
             }
             else if (lens == GlobeCamera.Lens.precipitation)
             {
-                mesh.uv = null;
+                mesh.uv = dummyUV;
                 mesh.colors = precipitationColors;
             }
             else if (lens == GlobeCamera.Lens.plates)
             {
-                mesh.uv = null;
+                mesh.uv = dummyUV;
                 mesh.colors = plateColors;
             }
 
@@ -180,7 +181,8 @@ namespace DeadReckoning.WorldGeneration
 
                 mapVerts = new Vector3[(hexes.Length * (12 + 1)) + vMod];
                 mapTris = new int[(hexes.Length * (12 * 3)) + tMod];
-                mapUV = new Vector3[mapVerts.Length];
+                mapUV = new Vector2[mapVerts.Length];
+                dummyUV = new Vector2[mapVerts.Length];
                 mapColors = new Color[mapVerts.Length];
                 windColors = new Color[mapVerts.Length];
                 currentColors = new Color[mapVerts.Length];
@@ -188,6 +190,11 @@ namespace DeadReckoning.WorldGeneration
                 temperatureColors = new Color[mapVerts.Length];
                 precipitationColors = new Color[mapVerts.Length];
                 plateColors = new Color[mapVerts.Length];
+
+                for (int dum = 0; dum < dummyUV.Length; dum++) // This is used when we want to show colors rather than textures.
+                {
+                    dummyUV[0] = new Vector2(0, 0);
+                }
 
                 int vertOffset = 0; // Used to make sure there aren't gaps in the tri array due to pentagons.
                 int triOffset = 0;
