@@ -147,7 +147,7 @@ namespace DeadReckoning.Map
 
         public enum Precipitation { veryHigh, high, mid, low, veryLow }
         public enum Gradient { veryHigh, high, mid, low, veryLow }
-        public enum Biome { none, tropicalMonsoon, hotSteppe, savannah, tropicalRainforest, hotDesert, coldDesert, mountain, highlands, mediterranean, humidSubtropic, oceanic, humidContinental, subarctic }
+        public enum Biome { none, tropicalMonsoon, hotSteppe, savannah, tropicalRainforest, hotDesert, coldDesert, mountain, highlands, mediterranean, humidSubtropic, oceanic, humidContinental, subarctic, prairie }
         public enum WindType { trade, westerly, easterly }
         public enum CurrentHeat { none, lukewarm, mixed, warm, cold }
         public enum FlowDirection { none, east, west, north, south }
@@ -520,11 +520,18 @@ namespace DeadReckoning.Map
                 }
             }
 
-            // Cold forests, usually interior.
+            // Forests and prairies.
             if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.humidContinentalCutoff
                 && biome == Biome.none)
             {
-                SetBiome(Biome.humidContinental, true, Gradient.mid, true, Gradient.mid, Color.cyan);
+                if (precipitation == Gradient.low || precipitation == Gradient.veryLow)
+                {
+                    SetBiome(Biome.prairie, true, Gradient.mid, false, Gradient.mid, Color.cyan);
+                }
+                else
+                {
+                    SetBiome(Biome.humidContinental, true, Gradient.mid, false, Gradient.mid, Color.cyan);
+                }
             }
 
             // Subarctic (think Siberia)
