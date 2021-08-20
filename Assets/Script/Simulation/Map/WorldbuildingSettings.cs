@@ -22,6 +22,22 @@ public class WorldbuildingSettings
 
     public float rainForestCutoff = 0.1f; // Earth is around 10.
 
+    public float savannahCutoff = 0.2f; // Earth is around 20.
+
+    public float hotSteppeCutoff = 0.35f; // Earth is around 35.
+
+    public float monsoonCutoff = 0.20f; // Earth is around 20.
+
+    public float mediterraneanCutoff = 0.45f; // Earth is around 30 - 45
+
+    public float humidSubtropicCutoff = 0.45f; // Earth is around 25 - 45
+
+    public float humidContinentalCutoff = 0.45f; // Earth is around 25 - 45
+
+    public float subarcticCutoff = 0.80f; // Earth is around 45
+
+    public float coldHotDesertSplit = 0.6f;
+
     public float veryHighTemperatureCutoff = 2.0f;
     public float highTemperatureCutoff = 1.0f;
     public float lowTemperatureCutoff = -1.0f;
@@ -31,9 +47,4 @@ public class WorldbuildingSettings
     public float highPrecipitationCutoff = 1.0f;
     public float lowPrecipitationCutoff = -1.0f;
     public float veryLowPrecipitationCutoff = -2.0f;
-
-    public Color mountainColor = Color.white;
-    public Color rainforestColor = Color.blue;
-    public Color desertColor = Color.yellow;
-    public Color highlandsColor = Color.Lerp(Color.green, Color.white, 0.25f);
 }

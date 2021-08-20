@@ -33,7 +33,11 @@ namespace DeadReckoning.Map
             foreach (Tile t in tiles)
             {
                 t.DetermineCurrents(hGen);
-                t.DetermineBiomes(hGen);
+
+                if (!t.submerged)
+                {
+                    t.DetermineBiomes(hGen);
+                }
             }
             foreach (Tile t in tiles)
             {
@@ -143,7 +147,7 @@ namespace DeadReckoning.Map
 
         public enum Precipitation { veryHigh, high, mid, low, veryLow }
         public enum Gradient { veryHigh, high, mid, low, veryLow }
-        public enum Biome { tropicalRainforest, desert, mountain, plain, highlands }
+        public enum Biome { none, tropicalMonsoon, hotSteppe, savannah, tropicalRainforest, hotDesert, coldDesert, mountain, highlands, mediterranean, humidSubtropic, oceanic, humidContinental, subarctic }
         public enum WindType { trade, westerly, easterly }
         public enum CurrentHeat { none, lukewarm, mixed, warm, cold }
         public enum FlowDirection { none, east, west, north, south }
@@ -366,6 +370,7 @@ namespace DeadReckoning.Map
                     if (!h.tile.submerged)
                     {
                         h.tile.shore = true; // Used to determine precipitation.
+                        currentHeat = heat; // Used to determine biomes.
                         currentDirection = neighborDirection; // Used to find onshore / offshore winds.
                     }
 
@@ -384,38 +389,45 @@ namespace DeadReckoning.Map
             }
         }
 
+        public void SetBiome(Biome bio, bool setTemp, Gradient temp, bool setPrecip, Gradient precip, Color c)
+        {
+            biome = bio;
+
+            if (setTemp)
+            {
+                temperature = temp;
+            }
+
+            if (setPrecip)
+            {
+                precipitation = precip;
+            }
+
+            hex.biomeColor = c;
+        }
+
         public void DetermineBiomes(HexSphereGenerator hGen)
         {
             Vector3 pos = hex.center.pos;
             Vector3 worldCenter = hGen.transform.position;
             float worldRadius = hGen.worldRadius;
-            float equatorY = hGen.transform.position.y;
 
             hex.biomeColor = Color.white;
 
             precipitation = EstimatePrecipitation();
             temperature = EstimateTemperature(hGen);
 
-            if (fault)
+            // Deserts (in rain shadows)
+            if (SearchForMountains(windDirection) && !fault && !faultAdjacent) // Deserts (in mountain rainshadows).
             {
-                biome = Biome.mountain;
-                temperature = Gradient.veryLow;
-                hex.biomeColor = map.settings.mountainColor;
-            }
-            else if (faultAdjacent)
-            {
-                biome = Biome.highlands;
-                temperature = Gradient.low;
-                hex.biomeColor = map.settings.highlandsColor;
-            }
-
-            // Deserts are fairly simple.
-            if (SearchForMountains(windDirection))
-            {
-                biome = Biome.desert;
-                temperature = Gradient.veryHigh;
-                precipitation = Gradient.veryLow;
-                hex.biomeColor = map.settings.desertColor;
+                if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.coldHotDesertSplit)
+                {
+                    SetBiome(Biome.hotDesert, true, Gradient.veryHigh, true, Gradient.veryLow, Color.red);
+                }
+                else
+                {
+                    SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue);
+                }
             }
             else
             {
@@ -438,12 +450,13 @@ namespace DeadReckoning.Map
                     oppositeWind = FlowDirection.north;
                 }
 
-                if (SearchForMountains(oppositeWind) && biome != Biome.desert)
+                if (SearchForMountains(oppositeWind) && biome != Biome.hotDesert)
                 {
                     precipitation = Gradient.veryHigh;
                 }
             }
 
+            // Rainforests (near equator)
             if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.rainForestCutoff)
             {
                 if (temperature == Gradient.high && precipitation == Gradient.high
@@ -451,11 +464,95 @@ namespace DeadReckoning.Map
                     || temperature == Gradient.veryHigh && precipitation == Gradient.high
                     || temperature == Gradient.veryHigh && precipitation == Gradient.veryHigh)
                 {
-                    biome = Biome.tropicalRainforest;
-                    hex.biomeColor = map.settings.rainforestColor;
+                    SetBiome(Biome.tropicalRainforest, false, Gradient.mid, false, Gradient.mid, Color.blue);
                 }
             }
 
+            // Savannahs (near equator, further out)
+            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.savannahCutoff)
+            {
+                if (temperature == Gradient.high && precipitation == Gradient.low
+                    || temperature == Gradient.high && precipitation == Gradient.veryLow
+                    || temperature == Gradient.veryHigh && precipitation == Gradient.low
+                    || temperature == Gradient.veryHigh && precipitation == Gradient.veryLow)
+                {
+                    SetBiome(Biome.savannah, false, Gradient.mid, false, Gradient.mid, Color.yellow);
+                }
+            }
+
+            // Hot steppe (near equator, around savannahs and deserts).
+            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.hotSteppeCutoff && biome == Biome.none)
+            {
+                SetBiome(Biome.hotSteppe, true, Gradient.high, true, Gradient.low, Color.Lerp(Color.red, Color.yellow, 0.25f));
+            }
+
+            // Monsoon (where onshore winds and warm currents meet (kinda rare).
+            if (shore && windDirection != currentDirection && currentHeat == CurrentHeat.warm
+                && Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.monsoonCutoff)
+            {
+                SetBiome(Biome.tropicalMonsoon, true, Gradient.high, true, Gradient.high, Color.magenta);
+            }
+
+            // Mediterranean (cold currents)
+            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.mediterraneanCutoff
+                && currentHeat == CurrentHeat.cold)
+            {
+                SetBiome(Biome.mediterranean, true, Gradient.mid, true, Gradient.mid, Color.yellow);
+            }
+
+            // Oceanic (warm currents)
+            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.mediterraneanCutoff
+                && currentHeat == CurrentHeat.warm)
+            {
+                SetBiome(Biome.oceanic, true, Gradient.mid, true, Gradient.veryHigh, Color.green);
+            }
+
+            // Humid subtropics: wet, dense forests, usually interior.
+            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.humidSubtropicCutoff)
+            {
+                if (temperature == Gradient.high && precipitation == Gradient.high
+                    || temperature == Gradient.high && precipitation == Gradient.veryHigh
+                    || temperature == Gradient.veryHigh && precipitation == Gradient.high
+                    || temperature == Gradient.veryHigh && precipitation == Gradient.veryHigh)
+                {
+                    SetBiome(Biome.humidSubtropic, true, Gradient.mid, true, Gradient.veryHigh, Color.Lerp(Color.green, Color.blue, 0.25f));
+                }
+            }
+
+            // Cold forests, usually interior.
+            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.humidContinentalCutoff
+                && biome == Biome.none)
+            {
+                SetBiome(Biome.humidContinental, true, Gradient.mid, true, Gradient.mid, Color.cyan);
+            }
+
+            // Subarctic (think Siberia)
+            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.subarcticCutoff)
+            {
+                SetBiome(Biome.subarctic, true, Gradient.veryLow, true, Gradient.low, Color.Lerp(Color.cyan, Color.black, 0.7f));
+            }
+
+            // Mountain & Highlands
+            if (fault)
+            {
+                SetBiome(Biome.mountain, true, Gradient.veryLow, false, Gradient.mid, Color.white);
+            }
+            else if (faultAdjacent) // Highlands
+            {
+                SetBiome(Biome.highlands, true, Gradient.low, false, Gradient.mid, Color.Lerp(Color.green, Color.white, 0.25f));
+            }
+
+            if (biome == Biome.none)
+            {
+                if (shore)
+                {
+                    SetBiome(Biome.humidSubtropic, true, Gradient.mid, true, Gradient.veryHigh, Color.Lerp(Color.green, Color.blue, 0.25f));
+                }
+                else
+                {
+                    SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue);
+                }
+            }
         }
 
         public Gradient EstimateTemperature(HexSphereGenerator hGen)
