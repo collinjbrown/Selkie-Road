@@ -11,7 +11,7 @@ public class GlobeCamera : MonoBehaviour
 
     public Lens lens;
 
-    public enum Lens { plain, winds, currents, biomes, temperature, precipitation, plates } // Add more later.
+    public enum Lens { plain, matte, winds, currents, biomes, temperature, precipitation, plates } // Add more later.
 
     void FixedUpdate()
     {

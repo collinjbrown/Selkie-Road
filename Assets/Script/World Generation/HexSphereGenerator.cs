@@ -428,6 +428,7 @@ namespace DeadReckoning.WorldGeneration
 
         public Vertex[] vertices;
 
+        public Vector3 uv;
         public Color color;
         public Color windColor;
         public Color currentColor;

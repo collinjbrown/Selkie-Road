@@ -30,6 +30,8 @@ namespace DeadReckoning.WorldGeneration
         public int[] mapTris;
 
         [HideInInspector]
+        public Vector3[] mapUV;
+        [HideInInspector]
         public Color[] mapColors;
         [HideInInspector]
         public Color[] windColors;
@@ -66,7 +68,9 @@ namespace DeadReckoning.WorldGeneration
 
             if (hex)
             {
-                mesh.colors = mapColors;
+                mesh.SetUVs(0, mapUV);
+                // mesh.uv = mapUV;
+                // mesh.colors = mapColors;
             }
 
             mesh.Optimize();
@@ -88,30 +92,43 @@ namespace DeadReckoning.WorldGeneration
 
             if (lens == GlobeCamera.Lens.plain)
             {
+                mesh.SetUVs(0, mapUV);
+                // mesh.uv = mapUV;
+                mesh.colors = null;
+            }
+            if (lens == GlobeCamera.Lens.matte)
+            {
+                mesh.uv = null;
                 mesh.colors = mapColors;
             }
             else if (lens == GlobeCamera.Lens.winds)
             {
+                mesh.uv = null;
                 mesh.colors = windColors;
             }
             else if (lens == GlobeCamera.Lens.currents)
             {
+                mesh.uv = null;
                 mesh.colors = currentColors;
             }
             else if (lens == GlobeCamera.Lens.biomes)
             {
+                mesh.uv = null;
                 mesh.colors = biomeColors;
             }
             else if (lens == GlobeCamera.Lens.temperature)
             {
+                mesh.uv = null;
                 mesh.colors = temperatureColors;
             }
             else if (lens == GlobeCamera.Lens.precipitation)
             {
+                mesh.uv = null;
                 mesh.colors = precipitationColors;
             }
             else if (lens == GlobeCamera.Lens.plates)
             {
+                mesh.uv = null;
                 mesh.colors = plateColors;
             }
 
@@ -163,6 +180,7 @@ namespace DeadReckoning.WorldGeneration
 
                 mapVerts = new Vector3[(hexes.Length * (12 + 1)) + vMod];
                 mapTris = new int[(hexes.Length * (12 * 3)) + tMod];
+                mapUV = new Vector3[mapVerts.Length];
                 mapColors = new Color[mapVerts.Length];
                 windColors = new Color[mapVerts.Length];
                 currentColors = new Color[mapVerts.Length];
@@ -188,6 +206,17 @@ namespace DeadReckoning.WorldGeneration
                     mapVerts[(t * 13) + 7 + vertOffset] = (h.vertices[2].pos + h.vertices[3].pos) / 2.0f;  // DE
                     mapVerts[(t * 13) + 8 + vertOffset] = h.vertices[4].pos;                                // F
                     mapVerts[(t * 13) + 9 + vertOffset] = (h.vertices[3].pos + h.vertices[4].pos) / 2.0f;  // EF
+
+                    mapUV[(t * 13) + 0 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 1 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 2 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 3 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 4 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 5 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 6 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 7 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 8 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 9 + vertOffset] = h.uv;
 
                     mapColors[(t * 13) + 0 + vertOffset] = h.color;
                     mapColors[(t * 13) + 1 + vertOffset] = h.color;
@@ -329,6 +358,10 @@ namespace DeadReckoning.WorldGeneration
                         mapVerts[(t * 13) + 11 + vertOffset] = (h.vertices[4].pos + h.vertices[5].pos) / 2.0f;  // FG
                         mapVerts[(t * 13) + 12 + vertOffset] = (h.vertices[5].pos + h.vertices[0].pos) / 2.0f;  // GB
 
+                        mapUV[(t * 13) + 10 + vertOffset] = h.uv;
+                        mapUV[(t * 13) + 11 + vertOffset] = h.uv;
+                        mapUV[(t * 13) + 12 + vertOffset] = h.uv;
+
                         mapColors[(t * 13) + 10 + vertOffset] = h.color;
                         mapColors[(t * 13) + 11 + vertOffset] = h.color;
                         mapColors[(t * 13) + 12 + vertOffset] = h.color;
@@ -392,6 +425,8 @@ namespace DeadReckoning.WorldGeneration
                     else
                     {
                         mapVerts[(t * 13) + 10 + vertOffset] = (h.vertices[4].pos + h.vertices[0].pos) / 2.0f;  // FB
+
+                        mapUV[(t * 13) + 10 + vertOffset] = h.uv;
 
                         mapColors[(t * 13) + 10 + vertOffset] = h.color;
 
