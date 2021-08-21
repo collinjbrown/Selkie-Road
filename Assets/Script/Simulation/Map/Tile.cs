@@ -428,6 +428,7 @@ namespace DeadReckoning.Map
                 else
                 {
                     SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue);
+                    hGen.AddGrass(hex, Color.Lerp(Color.green, Color.white, 0.5f), Color.green);
                 }
             }
             else
@@ -478,6 +479,7 @@ namespace DeadReckoning.Map
                     || temperature == Gradient.veryHigh && precipitation == Gradient.veryLow)
                 {
                     SetBiome(Biome.savannah, false, Gradient.mid, false, Gradient.mid, Color.yellow);
+                    hGen.AddGrass(hex, Color.Lerp(Color.red, Color.white, 0.5f), Color.red);
                 }
             }
 
@@ -485,6 +487,7 @@ namespace DeadReckoning.Map
             if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.hotSteppeCutoff && biome == Biome.none)
             {
                 SetBiome(Biome.hotSteppe, true, Gradient.high, true, Gradient.low, Color.Lerp(Color.red, Color.yellow, 0.25f));
+                hGen.AddGrass(hex, Color.Lerp(Color.yellow, Color.white, 0.5f), Color.yellow);
             }
 
             // Monsoon (where onshore winds and warm currents meet (kinda rare).
@@ -506,6 +509,7 @@ namespace DeadReckoning.Map
                 && currentHeat == CurrentHeat.warm)
             {
                 SetBiome(Biome.oceanic, true, Gradient.mid, true, Gradient.veryHigh, Color.green);
+                hGen.AddGrass(hex, Color.Lerp(Color.green, Color.white, 0.5f), Color.green);
             }
 
             // Humid subtropics: wet, dense forests, usually interior.
@@ -527,6 +531,7 @@ namespace DeadReckoning.Map
                 if (precipitation == Gradient.low || precipitation == Gradient.veryLow)
                 {
                     SetBiome(Biome.prairie, true, Gradient.mid, false, Gradient.mid, Color.cyan);
+                    hGen.AddGrass(hex, Color.Lerp(Color.green, Color.white, 0.5f), Color.yellow);
                 }
                 else
                 {

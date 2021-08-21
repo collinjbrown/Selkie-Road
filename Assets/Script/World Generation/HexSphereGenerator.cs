@@ -19,11 +19,12 @@ namespace DeadReckoning.WorldGeneration
         public float oceanDepth;
         public float worldRadius;
 
+        public GameObject detailHolder;
+
         public GameObject hexChunkPrefab;
         public Material chunkMaterial;
         public GameObject planetPrefab;
-
-        public GameObject windPrefab;
+        public GameObject grassPrefab;
 
         public NoiseSettings noiseSettings;
         public WorldbuildingSettings worldSettings;
@@ -110,6 +111,7 @@ namespace DeadReckoning.WorldGeneration
         public void Generate()
         {
             // Generates the world.
+            detailHolder = this.gameObject.transform.GetChild(0).gameObject;
             mainCamera = Camera.main;
             vertHexes = new Dictionary<Vector3, Hex>();
             noiseFilter = new NoiseFilter(noiseSettings);
@@ -247,7 +249,13 @@ namespace DeadReckoning.WorldGeneration
         }
         #endregion
 
-        #region Presentation
+        #region Presentation & Details
+
+        public void AddGrass(Hex h, Color bladeColor, Color tipColor)
+        {
+            // Figure out how to add grass, please.
+        }
+
         public void ChangeLenses()
         {
             foreach (HexChunk c in chunks)

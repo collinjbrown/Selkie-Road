@@ -47,4 +47,6 @@ public class WorldbuildingSettings
     public float highPrecipitationCutoff = 1.0f;
     public float lowPrecipitationCutoff = -1.0f;
     public float veryLowPrecipitationCutoff = -2.0f;
+
+    public GameObject grassPrefab;
 }
