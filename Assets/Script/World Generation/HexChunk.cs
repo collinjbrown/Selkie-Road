@@ -537,16 +537,22 @@ namespace DeadReckoning.WorldGeneration
         {
             List<ProceduralGeneration.Tree> continentalPines = new List<ProceduralGeneration.Tree>();
             List<ProceduralGeneration.Tree> subtropicPines = new List<ProceduralGeneration.Tree>();
+            List<ProceduralGeneration.Tree> highlandPines = new List<ProceduralGeneration.Tree>();
 
             for (int i = 0; i < hexes.Length; i++)
             {
                 Hex h = hexes[i];
 
-                if (h.tile.biome == Map.Tile.Biome.humidContinental || h.tile.biome == Map.Tile.Biome.humidSubtropic)
+                if (h.tile.biome == Map.Tile.Biome.humidContinental || h.tile.biome == Map.Tile.Biome.humidSubtropic || h.tile.biome == Map.Tile.Biome.highlands)
                 {
                     Vector3[] stumpPoints = new Vector3[hGen.worldSettings.treesPerHex];
 
-                    for (int stumps = 0; stumps < hGen.worldSettings.treesPerHex; stumps++)
+                    if (h.tile.biome == Map.Tile.Biome.highlands)
+                    {
+                        stumpPoints = new Vector3[hGen.worldSettings.treesPerHex / 2];
+                    }
+
+                    for (int stumps = 0; stumps < stumpPoints.Length; stumps++)
                     {
                         Vertex r1 = h.vertices[Random.Range(0, h.vertices.Length)];
                         Vertex r2 = h.vertices[Random.Range(0, h.vertices.Length)];
@@ -556,7 +562,7 @@ namespace DeadReckoning.WorldGeneration
                             r2 = h.center;
                         }
 
-                        stumpPoints[stumps] = Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f));
+                        stumpPoints[stumps] = Vector3.Lerp(Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f)), h.center.pos, 0.1f);
                     }
 
                     Color canopyColor = new Color(0, 0, 0);
@@ -565,9 +571,13 @@ namespace DeadReckoning.WorldGeneration
                     {
                         canopyColor = hGen.worldSettings.continentalForestColor;
                     }
-                    else
+                    else if (h.tile.biome == Map.Tile.Biome.humidSubtropic)
                     {
                         canopyColor = hGen.worldSettings.subtropicForestColor;
+                    }
+                    else
+                    {
+                        canopyColor = hGen.worldSettings.highlandForestColor;
                     }
 
                     for (int ind = 0; ind < stumpPoints.Length; ind++)
@@ -586,25 +596,68 @@ namespace DeadReckoning.WorldGeneration
                         {
                             continentalPines.Add(newTree);
                         }
-                        else
+                        else if (h.tile.biome == Map.Tile.Biome.humidSubtropic)
                         {
                             subtropicPines.Add(newTree);
+                        }
+                        else
+                        {
+                            highlandPines.Add(newTree);
                         }
                     }
                 }
             }
 
-            if (continentalPines.Count > 0)
+            if (continentalPines.Count > 0 && continentalPines.Count < 1000)
             {
                 GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
                 g.GetComponent<Map.TreeContainer>().MapTrees(continentalPines);
                 g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.continentalForestColor);
             }
-            if (subtropicPines.Count > 0)
+            else
+            {
+                for (int i = 0; i < continentalPines.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, continentalPines.Count - i);
+
+                    GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.TreeContainer>().MapTrees(continentalPines.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.continentalForestColor);
+                }
+            }
+            if (subtropicPines.Count > 0 && subtropicPines.Count < 1000)
             {
                 GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
                 g.GetComponent<Map.TreeContainer>().MapTrees(subtropicPines);
                 g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subtropicForestColor);
+            }
+            else
+            {
+                for (int i = 0; i < subtropicPines.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, subtropicPines.Count - i);
+
+                    GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.TreeContainer>().MapTrees(subtropicPines.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subtropicForestColor);
+                }
+            }
+            if (highlandPines.Count > 0 && highlandPines.Count < 1000)
+            {
+                GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.TreeContainer>().MapTrees(highlandPines);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.highlandForestColor);
+            }
+            else
+            {
+                for (int i = 0; i < highlandPines.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, highlandPines.Count - i);
+
+                    GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.TreeContainer>().MapTrees(highlandPines.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.highlandForestColor);
+                }
             }
 
         }

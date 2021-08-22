@@ -7,6 +7,9 @@ namespace DeadReckoning.Map
 {
     public class TreeContainer : MonoBehaviour
     {
+        public int vertCount;
+        public int triCount;
+
         Vector3[] verts;
         int[] tris;
 
@@ -30,6 +33,9 @@ namespace DeadReckoning.Map
 
             verts = rawVerts.ToArray();
             tris = rawTris.ToArray();
+
+            vertCount = rawVerts.Count;
+            triCount = rawTris.Count;
 
             Render();
         }

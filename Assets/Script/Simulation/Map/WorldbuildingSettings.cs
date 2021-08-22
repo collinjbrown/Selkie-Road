@@ -56,6 +56,7 @@ public class WorldbuildingSettings
     public int treesPerHex = 25;
     public Color continentalForestColor = Color.Lerp(Color.green, Color.black, 0.5f);
     public Color subtropicForestColor = Color.Lerp(Color.green, Color.blue, 0.5f);
+    public Color highlandForestColor = Color.Lerp(Color.green, Color.blue, 0.5f);
     #endregion
 
     #region Grasses
