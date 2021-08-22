@@ -36,6 +36,8 @@ namespace DeadReckoning.WorldGeneration
         [HideInInspector]
         public Vector2[] mapUV;
         [HideInInspector]
+        public Vector2[] biomeUV;
+        [HideInInspector]
         public Vector2[] dummyUV;
         [HideInInspector]
         public Color[] mapColors;
@@ -75,6 +77,8 @@ namespace DeadReckoning.WorldGeneration
             if (hex)
             {
                 mesh.SetUVs(0, mapUV);
+                mesh.SetUVs(2, biomeUV);
+                mesh.colors = mapColors;
                 // mesh.uv = mapUV;
                 // mesh.colors = mapColors;
             }
@@ -119,41 +123,42 @@ namespace DeadReckoning.WorldGeneration
             if (lens == GlobeCamera.Lens.plain)
             {
                 mesh.SetUVs(0, mapUV);
+                mesh.SetUVs(2, biomeUV);
                 mesh.colors = mapColors;
             }
             else if (lens == GlobeCamera.Lens.matte)
             {
-                mesh.uv = dummyUV;
+                mesh.SetUVs(0, dummyUV);
                 mesh.colors = mapColors;
             }
             else if (lens == GlobeCamera.Lens.winds)
             {
-                mesh.uv = dummyUV;
+                mesh.SetUVs(2, dummyUV);
                 mesh.colors = windColors;
             }
             else if (lens == GlobeCamera.Lens.currents)
             {
-                mesh.uv = dummyUV;
+                mesh.SetUVs(2, dummyUV);
                 mesh.colors = currentColors;
             }
             else if (lens == GlobeCamera.Lens.biomes)
             {
-                mesh.uv = dummyUV;
+                mesh.SetUVs(2, dummyUV);
                 mesh.colors = biomeColors;
             }
             else if (lens == GlobeCamera.Lens.temperature)
             {
-                mesh.uv = dummyUV;
+                mesh.SetUVs(2, dummyUV);
                 mesh.colors = temperatureColors;
             }
             else if (lens == GlobeCamera.Lens.precipitation)
             {
-                mesh.uv = dummyUV;
+                mesh.SetUVs(2, dummyUV);
                 mesh.colors = precipitationColors;
             }
             else if (lens == GlobeCamera.Lens.plates)
             {
-                mesh.uv = dummyUV;
+                mesh.SetUVs(2, dummyUV);
                 mesh.colors = plateColors;
             }
 
@@ -206,6 +211,7 @@ namespace DeadReckoning.WorldGeneration
                 mapVerts = new Vector3[(hexes.Length * (12 + 1)) + vMod];
                 mapTris = new int[(hexes.Length * (12 * 3)) + tMod];
                 mapUV = new Vector2[mapVerts.Length];
+                biomeUV = new Vector2[mapVerts.Length];
                 dummyUV = new Vector2[mapVerts.Length];
                 mapColors = new Color[mapVerts.Length];
                 windColors = new Color[mapVerts.Length];
@@ -238,16 +244,27 @@ namespace DeadReckoning.WorldGeneration
                     mapVerts[(t * 13) + 8 + vertOffset] = h.vertices[4].pos;                                // F
                     mapVerts[(t * 13) + 9 + vertOffset] = (h.vertices[3].pos + h.vertices[4].pos) / 2.0f;  // EF
 
-                    mapUV[(t * 13) + 0 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 1 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 2 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 3 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 4 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 5 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 6 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 7 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 8 + vertOffset] = h.uv;
-                    mapUV[(t * 13) + 9 + vertOffset] = h.uv;
+                    mapUV[(t * 13) + 0 + vertOffset] = (new Vector2(0.5f, 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f);                            // A
+                    mapUV[(t * 13) + 1 + vertOffset] = (new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);           // B
+                    mapUV[(t * 13) + 2 + vertOffset] = (new Vector2(0.5f, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);            // C
+                    mapUV[(t * 13) + 3 + vertOffset] = (new Vector2(0, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);               // BC
+                    mapUV[(t * 13) + 4 + vertOffset] = (new Vector2(1.0f, 0) + new Vector2(1.0f, 0.5f) * 0.5f);                               // D
+                    mapUV[(t * 13) + 5 + vertOffset] = (Vector2.Lerp(new Vector2(1.0f, 0), new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f); // CD
+                    mapUV[(t * 13) + 6 + vertOffset] = (new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);           // E
+                    mapUV[(t * 13) + 7 + vertOffset] = (new Vector2(0, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);              // DE
+                    mapUV[(t * 13) + 8 + vertOffset] = (new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);          // F
+                    mapUV[(t * 13) + 9 + vertOffset] = (Vector2.Lerp(new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f), new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f); // EF
+
+                    biomeUV[(t * 13) + 0 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 1 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 2 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 3 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 4 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 5 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 6 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 7 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 8 + vertOffset] = h.uv;
+                    biomeUV[(t * 13) + 9 + vertOffset] = h.uv;
 
                     mapColors[(t * 13) + 0 + vertOffset] = h.color;
                     mapColors[(t * 13) + 1 + vertOffset] = h.color;
@@ -389,9 +406,13 @@ namespace DeadReckoning.WorldGeneration
                         mapVerts[(t * 13) + 11 + vertOffset] = (h.vertices[4].pos + h.vertices[5].pos) / 2.0f;  // FG
                         mapVerts[(t * 13) + 12 + vertOffset] = (h.vertices[5].pos + h.vertices[0].pos) / 2.0f;  // GB
 
-                        mapUV[(t * 13) + 10 + vertOffset] = h.uv;
-                        mapUV[(t * 13) + 11 + vertOffset] = h.uv;
-                        mapUV[(t * 13) + 12 + vertOffset] = h.uv;
+                        mapUV[(t * 13) + 10 + vertOffset] = (new Vector2(-1,0) + new Vector2(1, 0.5f)) * 0.5f;
+                        mapUV[(t * 13) + 11 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
+                        mapUV[(t * 13) + 12 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
+
+                        biomeUV[(t * 13) + 10 + vertOffset] = h.uv;
+                        biomeUV[(t * 13) + 11 + vertOffset] = h.uv;
+                        biomeUV[(t * 13) + 12 + vertOffset] = h.uv;
 
                         mapColors[(t * 13) + 10 + vertOffset] = h.color;
                         mapColors[(t * 13) + 11 + vertOffset] = h.color;
@@ -457,7 +478,9 @@ namespace DeadReckoning.WorldGeneration
                     {
                         mapVerts[(t * 13) + 10 + vertOffset] = (h.vertices[4].pos + h.vertices[0].pos) / 2.0f;  // FB
 
-                        mapUV[(t * 13) + 10 + vertOffset] = h.uv;
+                        mapUV[(t * 13) + 10 + vertOffset] = Vector2.Lerp(new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f);
+
+                        biomeUV[(t * 13) + 10 + vertOffset] = h.uv;
 
                         mapColors[(t * 13) + 10 + vertOffset] = h.color;
 

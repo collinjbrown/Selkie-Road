@@ -1924,6 +1924,7 @@ MonoBehaviour:
     treesPerHex: 25
     continentalForestColor: {r: 0, g: 0.5, b: 0, a: 1}
     subtropicForestColor: {r: 0, g: 0.5, b: 0.5, a: 1}
+    highlandForestColor: {r: 0, g: 0.5, b: 0.5, a: 1}
     renderGrass: 0
     savannahGrassBaseColor: {r: 1, g: 0.9607843, b: 0.50784314, a: 1}
     savannahGrassTipColor: {r: 1, g: 0.5, b: 0.5, a: 1}
@@ -1954,12 +1955,12 @@ MonoBehaviour:
   - {fileID: 2800000, guid: bb2f13f32f3c3ba4aaa821dd680b7006, type: 3}
   - {fileID: 2800000, guid: 63bcb9660804a264f9b8f21e0acd83b3, type: 3}
   - {fileID: 2800000, guid: cd6b3bd117b79fc43af841b470a05e19, type: 3}
-  - {fileID: 2800000, guid: c65f1c670f152fb41a09e03f6b82ea57, type: 3}
-  - {fileID: 2800000, guid: d834913f6d3fa1248be87a0d57f558d4, type: 3}
+  - {fileID: 2800000, guid: dce7cb47809da4e40a42f20db807005b, type: 3}
+  - {fileID: 2800000, guid: 69dc2bc7787e3934eb16c16d9402ba2b, type: 3}
   - {fileID: 2800000, guid: e0e02fa73edf33a47821aa062784083b, type: 3}
-  - {fileID: 2800000, guid: 616a4d75dd5d32b43a44b75e7e5634ab, type: 3}
   - {fileID: 2800000, guid: 39ee67c3d789dc84db2ff95f1db26e19, type: 3}
-  - {fileID: 2800000, guid: 60625469de5b3ba4685b63fff5236e8f, type: 3}
+  - {fileID: 2800000, guid: 39ee67c3d789dc84db2ff95f1db26e19, type: 3}
+  - {fileID: 2800000, guid: 39ee67c3d789dc84db2ff95f1db26e19, type: 3}
   - {fileID: 2800000, guid: 0a3e4b90ee99e80459777b78d3542cc4, type: 3}
   - {fileID: 2800000, guid: 9a98333acb2fde542b8911ea7e3bd562, type: 3}
   - {fileID: 2800000, guid: 47ea5dbb353c736479d82f22baa0c4ab, type: 3}
