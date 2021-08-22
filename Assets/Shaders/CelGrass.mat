@@ -35,14 +35,14 @@ Material:
     - _BendDelta: 0.2
     - _BladeBendCurve: 2
     - _BladeBendDistance: 0.38
-    - _BladeHeightMax: 0.2
-    - _BladeHeightMin: 0.67
+    - _BladeHeightMax: 0.04
+    - _BladeHeightMin: 0.01
     - _BladeSegments: 3
     - _BladeWidthMax: 0.05
-    - _BladeWidthMin: 0.02
+    - _BladeWidthMin: 0.015
     - _GrassFalloff: 0.05
     - _GrassThreshold: 0.5
-    - _TessellationGrassDistance: 0.1
+    - _TessellationGrassDistance: 0.24
     - _WindFrequency: 0.046
     m_Colors:
     - _BaseColor: {r: 0.1970452, g: 0.33962262, b: 0.2152332, a: 1}

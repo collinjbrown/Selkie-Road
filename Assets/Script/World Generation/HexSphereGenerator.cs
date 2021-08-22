@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Diagnostics;
 using System.Linq;
 using UnityEditor;
+using DeadReckoning.Procedural;
 
 namespace DeadReckoning.WorldGeneration
 {
@@ -19,15 +20,13 @@ namespace DeadReckoning.WorldGeneration
         public float oceanDepth;
         public float worldRadius;
 
-        public GameObject detailHolder;
-
         public GameObject hexChunkPrefab;
         public Material chunkMaterial;
         public GameObject planetPrefab;
-        public GameObject grassPrefab;
 
         public NoiseSettings noiseSettings;
         public WorldbuildingSettings worldSettings;
+        public ProceduralSettings procSettings;
 
         #region Textures
         public Texture2D[] textureArray;
@@ -111,7 +110,6 @@ namespace DeadReckoning.WorldGeneration
         public void Generate()
         {
             // Generates the world.
-            detailHolder = this.gameObject.transform.GetChild(0).gameObject;
             mainCamera = Camera.main;
             vertHexes = new Dictionary<Vector3, Hex>();
             noiseFilter = new NoiseFilter(noiseSettings);
@@ -196,7 +194,7 @@ namespace DeadReckoning.WorldGeneration
                     }
 
                     Map.TileMap map = new Map.TileMap(primitiveTiles, worldSettings);
-                    map.DetermineContinents();
+                    map.DetermineContinents(this);
                     UnityEngine.Debug.Log($"{primitiveTiles.Count} tiles generated.");
 
                     foreach (HexChunk c in chunks)
@@ -208,6 +206,14 @@ namespace DeadReckoning.WorldGeneration
 
                     foreach (HexChunk c in chunks)
                     {
+                        if (worldSettings.renderGrass)
+                        {
+                            c.SpawnGrass(this);
+                        }
+                        if (worldSettings.renderTrees)
+                        {
+                            c.SpawnForests(this);
+                        }
                         c.Render(true);
                     }
                 }
@@ -228,6 +234,9 @@ namespace DeadReckoning.WorldGeneration
             HexSphereGenerator planetGenerator = g.GetComponent<HexSphereGenerator>();
 
             planetGenerator.worldRadius = worldRadius * oceanDepth;
+
+            planetGenerator.worldSettings = worldSettings;
+            planetGenerator.procSettings = procSettings;
 
             if (!planetGenerator.hexes)
             {
@@ -250,11 +259,6 @@ namespace DeadReckoning.WorldGeneration
         #endregion
 
         #region Presentation & Details
-
-        public void AddGrass(Hex h, Color bladeColor, Color tipColor)
-        {
-            // Figure out how to add grass, please.
-        }
 
         public void ChangeLenses()
         {
@@ -462,6 +466,7 @@ namespace DeadReckoning.WorldGeneration
     public class Hex
     {
         public Map.Tile tile;
+        public HexChunk chunk;
 
         public int x;
         public int y;

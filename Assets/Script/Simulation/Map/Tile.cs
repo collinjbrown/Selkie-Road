@@ -23,7 +23,6 @@ namespace DeadReckoning.Map
 
             foreach (Tile t in tiles)
             {
-                t.map = this;
                 t.DetermineWinds(hGen);
                 t.DetermineSubmerged(hGen);
             }
@@ -34,9 +33,10 @@ namespace DeadReckoning.Map
             {
                 t.DetermineCurrents(hGen);
 
-                if (!t.submerged)
+                if (!t.submerged && !t.polarCap)
                 {
                     t.DetermineBiomes(hGen);
+                    t.DetermineResources();
                 }
             }
             foreach (Tile t in tiles)
@@ -45,7 +45,7 @@ namespace DeadReckoning.Map
             }
         }
 
-        public void DetermineContinents()
+        public void DetermineContinents(HexSphereGenerator hGen)
         {
             // This needs to be called before we add noise...
             // so that we can add mountains when we do that.
@@ -88,6 +88,8 @@ namespace DeadReckoning.Map
 
             foreach (Tile t in tiles)
             {
+                t.map = this;
+
                 foreach (Hex h in t.hex.neighbors)
                 {
                     if (h.tile.plate != t.plate)
@@ -100,6 +102,9 @@ namespace DeadReckoning.Map
                         }
                     }
                 }
+
+                settings = hGen.worldSettings;
+                t.DeterminePolarCaps(hGen);
             }
         }
 
@@ -119,11 +124,12 @@ namespace DeadReckoning.Map
         public bool shore; // Edge of landmass.
         public bool fault; // Edge of continent.
         public bool faultAdjacent; // What is says on the tin.
+        public bool polarCap;
 
         public TileMap map;
         public TectonicPlate plate;
 
-        public List<Resource> resourceYields;
+        public Dictionary<Resource.Type, Resource> resources;
 
         public List<Structure> structures;
 
@@ -138,21 +144,258 @@ namespace DeadReckoning.Map
         public FlowDirection currentDirection;
         public CurrentHeat currentHeat;
 
+        public bool grass;
+
         public Hex hex;
 
         public Tile(Hex h)
         {
+            resources = new Dictionary<Resource.Type, Resource>();
+            structures = new List<Structure>();
             hex = h;
         }
 
         public enum Precipitation { veryHigh, high, mid, low, veryLow }
         public enum Gradient { veryHigh, high, mid, low, veryLow }
-        public enum Biome { none, tropicalMonsoon, hotSteppe, savannah, tropicalRainforest, hotDesert, coldDesert, mountain, highlands, mediterranean, humidSubtropic, oceanic, humidContinental, subarctic, prairie }
+        public enum Biome { none, tropicalMonsoon, hotSteppe, savanna, tropicalRainforest, hotDesert, coldDesert, mountain, highlands, mediterranean, humidSubtropic, oceanic, humidContinental, subarctic, prairie, icecap }
+        // Respective Food :: 0,         20,          10,       10,           20,              0,         5,        N/A,       20,          40,             30,         25,          20,             5,       30,      0
+        // Other Resources :: 0,
         public enum WindType { trade, westerly, easterly }
         public enum CurrentHeat { none, lukewarm, mixed, warm, cold }
         public enum FlowDirection { none, east, west, north, south }
 
+        #region Resources
+        public void DetermineResources()
+        {
+            if (precipitation == Gradient.veryLow)
+            {
+                AddResources(Resource.Type.water, 0, false, true, false);
+            }
+            else if (precipitation == Gradient.low)
+            {
+                AddResources(Resource.Type.water, 10, false, true, false);
+            }
+            else if (precipitation == Gradient.mid)
+            {
+                AddResources(Resource.Type.water, 20, false, true, false);
+            }
+            else if (precipitation == Gradient.high)
+            {
+                AddResources(Resource.Type.water, 30, false, true, false);
+            }
+            else if (precipitation == Gradient.veryHigh)
+            {
+                AddResources(Resource.Type.water, 40, false, true, false);
+            }
+
+            int dumbLuck = Random.Range(0, 11);
+
+            #region Coasts & Faults
+            if (shore)
+            {
+                AddResources(Resource.Type.fish, 20, true, false, false);
+
+                if (dumbLuck == 10)
+                {
+                    AddResources(Resource.Type.fish, 10, true, false, false);
+                }
+            }
+
+            if (faultAdjacent)
+            {
+                AddResources(Resource.Type.stone, 20, false, false, true);
+
+                if (dumbLuck == 10)
+                {
+                    AddResources(Resource.Type.stone, 10, false, false, true);
+                }
+            }
+            #endregion
+
+            #region Biomes
+            if (biome == Biome.tropicalMonsoon)
+            {
+                AddResources(Resource.Type.rice, 20, true, false, false);
+
+                if (dumbLuck == 10)
+                {
+                    AddResources(Resource.Type.rice, 10, true, false, false);
+                }
+            }
+            else if (biome == Biome.hotSteppe)
+            {
+                AddResources(Resource.Type.barley, 5, true, false, false);
+                AddResources(Resource.Type.goat, 5, true, false, false);
+
+                if (dumbLuck == 10)
+                {
+                    AddResources(Resource.Type.goat, 10, true, false, false);
+                }
+            }
+            else if (biome == Biome.savanna)
+            {
+                AddResources(Resource.Type.maize, 5, true, false, false);
+                AddResources(Resource.Type.millet, 5, true, false, false);
+
+                if (dumbLuck >= 9)
+                {
+                    AddResources(Resource.Type.goat, 10, true, false, false);
+                }
+            }
+            else if (biome == Biome.tropicalRainforest)
+            {
+                AddResources(Resource.Type.sugarCane, 5, true, false, false);
+                AddResources(Resource.Type.coffee, 5, true, false, false);
+                AddResources(Resource.Type.banana, 5, true, false, false);
+                AddResources(Resource.Type.chocolate, 5, true, false, false);
+
+                if (dumbLuck >= 9)
+                {
+                    AddResources(Resource.Type.pork, 10, true, false, false);
+                }
+            }
+            else if (biome == Biome.coldDesert)
+            {
+                AddResources(Resource.Type.goat, 5, true, false, false);
+
+                if (dumbLuck == 10)
+                {
+                    AddResources(Resource.Type.goat, 5, true, false, false);
+                }
+            }
+            else if (biome == Biome.highlands)
+            {
+                AddResources(Resource.Type.sheep, 5, true, false, false);
+                AddResources(Resource.Type.barley, 10, true, false, false);
+                AddResources(Resource.Type.wheat, 5, true, false, false);
+
+                if (dumbLuck >= 9)
+                {
+                    AddResources(Resource.Type.goat, 10, true, false, false);
+                }
+            }
+            else if (biome == Biome.mediterranean)
+            {
+                AddResources(Resource.Type.wheat, 20, true, false, false);
+                AddResources(Resource.Type.olives, 10, true, false, false);
+                AddResources(Resource.Type.grapes, 10, true, false, false);
+                AddResources(Resource.Type.beef, 10, true, false, false);
+
+                if (dumbLuck == 10)
+                {
+                    AddResources(Resource.Type.grapes, 10, true, false, false);
+                    AddResources(Resource.Type.olives, 10, true, false, false);
+                }
+            }
+            else if (biome == Biome.humidSubtropic)
+            {
+                AddResources(Resource.Type.rice, 10, true, false, false);
+                AddResources(Resource.Type.cotton, 10, true, false, false);
+                AddResources(Resource.Type.maize, 10, true, false, false);
+                AddResources(Resource.Type.tea, 10, false, true, false);
+
+                if (dumbLuck == 10)
+                {
+                    AddResources(Resource.Type.potatoes, 10, true, false, false);
+                    AddResources(Resource.Type.tea, 10, false, true, false);
+                }
+            }
+            else if (biome == Biome.oceanic)
+            {
+                AddResources(Resource.Type.potatoes, 10, true, false, false);
+                AddResources(Resource.Type.sheep, 10, true, false, false);
+                AddResources(Resource.Type.beef, 10, true, false, false);
+
+                if (dumbLuck >= 9)
+                {
+                    AddResources(Resource.Type.potatoes, 10, true, false, false);
+                }
+            }
+            else if (biome == Biome.humidContinental)
+            {
+                AddResources(Resource.Type.wheat, 10, true, false, false);
+                AddResources(Resource.Type.barley, 10, true, false, false);
+                AddResources(Resource.Type.maize, 5, true, false, false);
+                AddResources(Resource.Type.potatoes, 5, true, false, false);
+
+                if (dumbLuck >= 9)
+                {
+                    AddResources(Resource.Type.poultry, 5, true, false, false);
+                    AddResources(Resource.Type.beef, 5, true, false, false);
+                }
+            }
+            else if (biome == Biome.subarctic)
+            {
+                AddResources(Resource.Type.wheat, 5, true, false, false);
+
+                if (dumbLuck >= 9)
+                {
+                    AddResources(Resource.Type.goat, 5, true, false, false);
+                }
+            }
+            else if (biome == Biome.prairie)
+            {
+                AddResources(Resource.Type.beef, 10, true, false, false);
+                AddResources(Resource.Type.wheat, 20, true, false, false);
+
+                if (dumbLuck >= 9)
+                {
+                    AddResources(Resource.Type.poultry, 10, true, false, false);
+                }
+            }
+            #endregion
+
+            #region Random
+            dumbLuck = Random.Range(0, 101);
+
+            if (dumbLuck >= 98)
+            {
+                AddResources(Resource.Type.tin, 10, false, false, true);
+            }
+            else if (dumbLuck >= 94)
+            {
+                AddResources(Resource.Type.copper, 20, false, false, true);
+            }
+            else if (dumbLuck >= 90)
+            {
+                AddResources(Resource.Type.iron, 20, false, false, true);
+            }
+            #endregion
+        }
+        public void AddResources(Resource.Type type, int yield, bool edible, bool drinkable, bool buildable)
+        {
+            if (!resources.ContainsKey(type))
+            {
+                Resource r = new Resource(type, yield, edible, drinkable, buildable);
+                resources.Add(type, r);
+            }
+            else
+            {
+                Resource r = resources[type];
+                r.yield += yield;
+            }
+        }
+        #endregion
+
         #region Worldbuilding
+
+        public void DeterminePolarCaps(HexSphereGenerator hGen)
+        {
+            Vector3 pos = hex.center.pos;
+            Vector3 worldCenter = hGen.transform.position;
+            float worldRadius = hGen.worldRadius;
+
+            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * (map.settings.polarCapCutoff))
+            {
+                polarCap = true;
+                SetBiome(Biome.icecap, true, Gradient.veryLow, true, Gradient.veryLow, Color.cyan, false);
+            }
+            else if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * (map.settings.polarCapCutoff - Random.Range(0, map.settings.polarVariance)))
+            {
+                polarCap = true;
+                SetBiome(Biome.icecap, true, Gradient.veryLow, true, Gradient.veryLow, Color.cyan, false);
+            }
+        }
 
         public bool SearchForMountains(FlowDirection neighborDirection)
         {
@@ -389,7 +632,7 @@ namespace DeadReckoning.Map
             }
         }
 
-        public void SetBiome(Biome bio, bool setTemp, Gradient temp, bool setPrecip, Gradient precip, Color c)
+        public void SetBiome(Biome bio, bool setTemp, Gradient temp, bool setPrecip, Gradient precip, Color c, bool grass)
         {
             biome = bio;
 
@@ -403,6 +646,7 @@ namespace DeadReckoning.Map
                 precipitation = precip;
             }
 
+            this.grass = grass;
             hex.biomeColor = c;
             hex.uv = new Vector2((int)bio, 0);
         }
@@ -423,12 +667,11 @@ namespace DeadReckoning.Map
             {
                 if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.coldHotDesertSplit)
                 {
-                    SetBiome(Biome.hotDesert, true, Gradient.veryHigh, true, Gradient.veryLow, Color.red);
+                    SetBiome(Biome.hotDesert, true, Gradient.veryHigh, true, Gradient.veryLow, Color.red, false);
                 }
                 else
                 {
-                    SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue);
-                    hGen.AddGrass(hex, Color.Lerp(Color.green, Color.white, 0.5f), Color.green);
+                    SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue, false);
                 }
             }
             else
@@ -461,13 +704,13 @@ namespace DeadReckoning.Map
             // Rainforests (near equator)
             if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.rainForestCutoff)
             {
-                if (temperature == Gradient.high && precipitation == Gradient.high
-                    || temperature == Gradient.high && precipitation == Gradient.veryHigh
-                    || temperature == Gradient.veryHigh && precipitation == Gradient.high
-                    || temperature == Gradient.veryHigh && precipitation == Gradient.veryHigh)
-                {
-                    SetBiome(Biome.tropicalRainforest, false, Gradient.mid, false, Gradient.mid, Color.blue);
-                }
+                //if (temperature == Gradient.high && precipitation == Gradient.high
+                //    || temperature == Gradient.high && precipitation == Gradient.veryHigh
+                //    || temperature == Gradient.veryHigh && precipitation == Gradient.high
+                //    || temperature == Gradient.veryHigh && precipitation == Gradient.veryHigh)
+                //{
+                SetBiome(Biome.tropicalRainforest, true, Gradient.high, true, Gradient.veryHigh, Color.blue, false);
+                // }
             }
 
             // Savannahs (near equator, further out)
@@ -478,38 +721,35 @@ namespace DeadReckoning.Map
                     || temperature == Gradient.veryHigh && precipitation == Gradient.low
                     || temperature == Gradient.veryHigh && precipitation == Gradient.veryLow)
                 {
-                    SetBiome(Biome.savannah, false, Gradient.mid, false, Gradient.mid, Color.yellow);
-                    hGen.AddGrass(hex, Color.Lerp(Color.red, Color.white, 0.5f), Color.red);
+                    SetBiome(Biome.savanna, false, Gradient.mid, false, Gradient.mid, Color.yellow, true);
                 }
             }
 
             // Hot steppe (near equator, around savannahs and deserts).
             if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.hotSteppeCutoff && biome == Biome.none)
             {
-                SetBiome(Biome.hotSteppe, true, Gradient.high, true, Gradient.low, Color.Lerp(Color.red, Color.yellow, 0.25f));
-                hGen.AddGrass(hex, Color.Lerp(Color.yellow, Color.white, 0.5f), Color.yellow);
+                SetBiome(Biome.hotSteppe, true, Gradient.high, true, Gradient.low, Color.Lerp(Color.red, Color.yellow, 0.25f), true);
             }
 
             // Monsoon (where onshore winds and warm currents meet (kinda rare).
             if (shore && windDirection != currentDirection && currentHeat == CurrentHeat.warm
                 && Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.monsoonCutoff)
             {
-                SetBiome(Biome.tropicalMonsoon, true, Gradient.high, true, Gradient.high, Color.magenta);
+                SetBiome(Biome.tropicalMonsoon, true, Gradient.high, true, Gradient.high, Color.magenta, false);
             }
 
             // Mediterranean (cold currents)
             if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.mediterraneanCutoff
                 && currentHeat == CurrentHeat.cold)
             {
-                SetBiome(Biome.mediterranean, true, Gradient.mid, true, Gradient.mid, Color.yellow);
+                SetBiome(Biome.mediterranean, true, Gradient.mid, true, Gradient.mid, Color.yellow, true);
             }
 
             // Oceanic (warm currents)
             if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.mediterraneanCutoff
                 && currentHeat == CurrentHeat.warm)
             {
-                SetBiome(Biome.oceanic, true, Gradient.mid, true, Gradient.veryHigh, Color.green);
-                hGen.AddGrass(hex, Color.Lerp(Color.green, Color.white, 0.5f), Color.green);
+                SetBiome(Biome.oceanic, true, Gradient.mid, true, Gradient.veryHigh, Color.green, true);
             }
 
             // Humid subtropics: wet, dense forests, usually interior.
@@ -520,7 +760,7 @@ namespace DeadReckoning.Map
                     || temperature == Gradient.veryHigh && precipitation == Gradient.high
                     || temperature == Gradient.veryHigh && precipitation == Gradient.veryHigh)
                 {
-                    SetBiome(Biome.humidSubtropic, true, Gradient.mid, true, Gradient.veryHigh, Color.Lerp(Color.green, Color.blue, 0.25f));
+                    SetBiome(Biome.humidSubtropic, true, Gradient.mid, true, Gradient.veryHigh, Color.Lerp(Color.green, Color.blue, 0.25f), false);
                 }
             }
 
@@ -530,44 +770,42 @@ namespace DeadReckoning.Map
             {
                 if (precipitation == Gradient.low || precipitation == Gradient.veryLow)
                 {
-                    SetBiome(Biome.prairie, true, Gradient.mid, false, Gradient.mid, Color.cyan);
-                    hGen.AddGrass(hex, Color.Lerp(Color.green, Color.white, 0.5f), Color.yellow);
+                    SetBiome(Biome.prairie, true, Gradient.mid, false, Gradient.mid, Color.cyan, true);
                 }
                 else
                 {
-                    SetBiome(Biome.humidContinental, true, Gradient.mid, false, Gradient.mid, Color.cyan);
+                    SetBiome(Biome.humidContinental, true, Gradient.mid, false, Gradient.mid, Color.cyan, false);
                 }
             }
 
             // Subarctic (think Siberia)
             if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.subarcticCutoff)
             {
-                SetBiome(Biome.subarctic, true, Gradient.veryLow, true, Gradient.low, Color.Lerp(Color.cyan, Color.black, 0.7f));
+                SetBiome(Biome.subarctic, true, Gradient.veryLow, true, Gradient.low, Color.Lerp(Color.cyan, Color.black, 0.7f), false);
             }
 
             // Mountain & Highlands
             if (fault)
             {
-                SetBiome(Biome.mountain, true, Gradient.veryLow, false, Gradient.mid, Color.white);
+                SetBiome(Biome.mountain, true, Gradient.veryLow, false, Gradient.mid, Color.white, false);
             }
             else if (faultAdjacent) // Highlands
             {
-                SetBiome(Biome.highlands, true, Gradient.low, false, Gradient.mid, Color.Lerp(Color.green, Color.white, 0.25f));
+                SetBiome(Biome.highlands, true, Gradient.low, false, Gradient.mid, Color.Lerp(Color.green, Color.white, 0.75f), true);
             }
 
             if (biome == Biome.none)
             {
                 if (shore)
                 {
-                    SetBiome(Biome.humidSubtropic, true, Gradient.mid, true, Gradient.veryHigh, Color.Lerp(Color.green, Color.blue, 0.25f));
+                    SetBiome(Biome.humidSubtropic, true, Gradient.mid, true, Gradient.veryHigh, Color.Lerp(Color.green, Color.blue, 0.25f), false);
                 }
                 else
                 {
-                    SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue);
+                    SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue, false);
                 }
             }
         }
-
         public Gradient EstimateTemperature(HexSphereGenerator hGen)
         {
             float posY = hex.center.pos.y;
@@ -707,9 +945,21 @@ namespace DeadReckoning.Map
 
     public class Resource
     {
-        public int yield;
-        public Type type;
+        public int yield; // How much of it one gets per turn.
+        public bool edible; // Can be eaten.
+        public bool drinkable; // Can be drunk (drinken sounds better).
+        public bool buildable; // Can be used to make structures.
+        public Type type; // What sort of thing it is.
 
-        public enum Type { stone, wood, food, metal } // These are just placeholders.
+        public enum Type { water, tea, wheat, barley, rice, millet, maize, potatoes, sugarCane, banana, coffee, chocolate, grapes, olives, cotton, pork, poultry, beef, goat, sheep, fish, lumber, tin, iron, copper, stone } // These are just placeholders.
+
+        public Resource(Resource.Type type, int yield, bool edible, bool drinkable, bool buildable)
+        {
+            this.type = type;
+            this.yield = yield;
+            this.edible = edible;
+            this.drinkable = drinkable;
+            this.buildable = buildable;
+        }
     }
 }

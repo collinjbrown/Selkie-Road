@@ -87,7 +87,6 @@
 					float3 normal  : NORMAL;
 					float4 tangent : TANGENT;
 					float2 uv      : TEXCOORD0;
-					float2 uv2      : TEXCOORD2;
 				};
 
 				struct VertexOutput
@@ -143,7 +142,7 @@
 					o.vertex = TransformObjectToHClip(v.vertex.xyz);
 					o.normal = v.normal;
 					o.tangent = v.tangent;
-					o.uv = v.uv2;
+					o.uv = v.uv;
 					return o;
 				}
 

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ForestShader
+  m_Shader: {fileID: -6465566751694194690, guid: d655fcf244f9212418239bb73c69e209,
+    type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BiomeTextures:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - Vector1_17601F12: 0
+    - Vector1_1A42DE87: 0.02
+    - Vector1_3B2588BD: 0.06
+    - Vector1_3C9F295B: 0
+    - Vector1_48BE1E22: 5000
+    - Vector1_63D6909F: 0.84
+    - Vector1_C49510EA: 1
+    - Vector1_D67AE10E: 0.1
+    - Vector1_ED262364: 0
+    m_Colors:
+    - Color_1E143C74: {r: 0.116011046, g: 0.31132078, b: 0.15364838, a: 1}
+    - Color_44754D60: {r: 0.34425846, g: 0.5471698, b: 0.29165182, a: 1}
+    - Color_E3BA5AD0: {r: 0.2795924, g: 0.5754717, b: 0.2795924, a: 1}

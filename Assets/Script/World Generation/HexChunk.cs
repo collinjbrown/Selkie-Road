@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using DeadReckoning.Procedural;
 
 
 namespace DeadReckoning.WorldGeneration
@@ -21,6 +22,9 @@ namespace DeadReckoning.WorldGeneration
         public Color color;
 
         public Triangle origin;
+
+        public GameObject grassPrefab;
+        public GameObject forestPrefab;
 
         #region Hidden Variables
         [HideInInspector]
@@ -79,7 +83,6 @@ namespace DeadReckoning.WorldGeneration
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
 
-
             MeshCollider meshCol = this.gameObject.GetComponent<MeshCollider>();
             meshCol.sharedMesh = mesh;
         }
@@ -91,6 +94,27 @@ namespace DeadReckoning.WorldGeneration
             mesh.Clear();
             mesh.vertices = mapVerts;
             mesh.triangles = mapTris;
+
+            if (lens == GlobeCamera.Lens.plain)
+            {
+                foreach (GrassController g in this.gameObject.GetComponentsInChildren<GrassController>(true))
+                {
+                    if (g.gameObject != this)
+                    {
+                        g.gameObject.SetActive(true);
+                    }
+                }
+            }
+            else
+            {
+                foreach (GrassController g in this.gameObject.GetComponentsInChildren<GrassController>(true))
+                {
+                    if (g.gameObject != this)
+                    {
+                        g.gameObject.SetActive(false);
+                    }
+                }
+            }
 
             if (lens == GlobeCamera.Lens.plain)
             {
@@ -493,6 +517,12 @@ namespace DeadReckoning.WorldGeneration
         #region Simulation Setup
         public void CreateMapTiles(HexSphereGenerator hGen)
         {
+            // This just maps hexes to tiles.
+            // I split them up to reduce overlap...
+            // between world generation and gameplay...
+            // so that changes to the latter don't accidentally...
+            // step on the toes of the former.
+
             for (int i = 0; i < hexes.Length; i++)
             {
                 Hex h = hexes[i];
@@ -502,6 +532,146 @@ namespace DeadReckoning.WorldGeneration
                 h.tile = tile;
             }
         }
+
+        public void SpawnForests(HexSphereGenerator hGen)
+        {
+            List<ProceduralGeneration.Tree> continentalPines = new List<ProceduralGeneration.Tree>();
+            List<ProceduralGeneration.Tree> subtropicPines = new List<ProceduralGeneration.Tree>();
+
+            for (int i = 0; i < hexes.Length; i++)
+            {
+                Hex h = hexes[i];
+
+                if (h.tile.biome == Map.Tile.Biome.humidContinental || h.tile.biome == Map.Tile.Biome.humidSubtropic)
+                {
+                    Vector3[] stumpPoints = new Vector3[hGen.worldSettings.treesPerHex];
+
+                    for (int stumps = 0; stumps < hGen.worldSettings.treesPerHex; stumps++)
+                    {
+                        Vertex r1 = h.vertices[Random.Range(0, h.vertices.Length)];
+                        Vertex r2 = h.vertices[Random.Range(0, h.vertices.Length)];
+
+                        if (r2 == r1)
+                        {
+                            r2 = h.center;
+                        }
+
+                        stumpPoints[stumps] = Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f));
+                    }
+
+                    Color canopyColor = new Color(0, 0, 0);
+
+                    if (h.tile.biome == Map.Tile.Biome.humidContinental)
+                    {
+                        canopyColor = hGen.worldSettings.continentalForestColor;
+                    }
+                    else
+                    {
+                        canopyColor = hGen.worldSettings.subtropicForestColor;
+                    }
+
+                    for (int ind = 0; ind < stumpPoints.Length; ind++)
+                    {
+                        Vector3 stump = stumpPoints[ind];
+
+                        // Each tree will be made up of a base cube...
+                        // and three pyramids sitting on top of one another.
+                        // Cube: 8 verts, 12 triangles.
+                        // Pyramid: 5 verts, 6 triangles.
+                        // Together: 11 verts, 18 triangles.
+
+                        Procedural.ProceduralGeneration.Tree newTree = new Procedural.ProceduralGeneration.Tree(hGen.procSettings, stump, Procedural.ProceduralGeneration.Tree.TreeType.pine, canopyColor);
+
+                        if (h.tile.biome == Map.Tile.Biome.humidContinental)
+                        {
+                            continentalPines.Add(newTree);
+                        }
+                        else
+                        {
+                            subtropicPines.Add(newTree);
+                        }
+                    }
+                }
+            }
+
+            if (continentalPines.Count > 0)
+            {
+                GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.TreeContainer>().MapTrees(continentalPines);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.continentalForestColor);
+            }
+            if (subtropicPines.Count > 0)
+            {
+                GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.TreeContainer>().MapTrees(subtropicPines);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subtropicForestColor);
+            }
+
+        }
+        public void SpawnGrass(HexSphereGenerator hGen)
+        {
+            // We want to create mesh objects to hold the grass terrain...
+            // on the specific hexes that have grass, and we want all instances...
+            // of a particular kind (read: color) of grass to be under their own...
+            // mesh object.
+
+            Dictionary<Map.Tile.Biome, GameObject> bladeDictionary = new Dictionary<Map.Tile.Biome, GameObject>();
+
+            for (int i = 0; i < hexes.Length; i++)
+            {
+                Hex h = hexes[i];
+                Map.Tile t = h.tile;
+
+                if (t.grass && !bladeDictionary.ContainsKey(t.biome))
+                {
+                    GameObject g = Instantiate(grassPrefab, this.transform.position, Quaternion.identity, this.transform);
+
+                    if (t.biome == Map.Tile.Biome.savanna)
+                    {
+                        g.GetComponent<GrassController>().baseColor = hGen.worldSettings.savannahGrassBaseColor;
+                        g.GetComponent<GrassController>().tipColor = hGen.worldSettings.savannahGrassTipColor;
+                    }
+                    else if (t.biome == Map.Tile.Biome.hotSteppe)
+                    {
+                        g.GetComponent<GrassController>().baseColor = hGen.worldSettings.steppeGrassBaseColor;
+                        g.GetComponent<GrassController>().tipColor = hGen.worldSettings.steppeGrassTipColor;
+                    }
+                    else if (t.biome == Map.Tile.Biome.mediterranean)
+                    {
+                        g.GetComponent<GrassController>().baseColor = hGen.worldSettings.mediterraneanGrassBaseColor;
+                        g.GetComponent<GrassController>().tipColor = hGen.worldSettings.mediterraneanGrassTipColor;
+                    }
+                    else if (t.biome == Map.Tile.Biome.oceanic)
+                    {
+                        g.GetComponent<GrassController>().baseColor = hGen.worldSettings.oceanicGrassBaseColor;
+                        g.GetComponent<GrassController>().tipColor = hGen.worldSettings.oceanicGrassTipColor;
+                    }
+                    else if (t.biome == Map.Tile.Biome.prairie)
+                    {
+                        g.GetComponent<GrassController>().baseColor = hGen.worldSettings.prairieGrassBaseColor;
+                        g.GetComponent<GrassController>().tipColor = hGen.worldSettings.prairieGrassTipColor;
+                    }
+                    else if (t.biome == Map.Tile.Biome.highlands)
+                    {
+                        g.GetComponent<GrassController>().baseColor = hGen.worldSettings.highlandGrassBaseColor;
+                        g.GetComponent<GrassController>().tipColor = hGen.worldSettings.highlandGrassTipColor;
+                    }
+
+                    bladeDictionary.Add(t.biome, g);
+                    g.GetComponent<GrassController>().hexes.Add(h);
+                }
+                else if (t.grass)
+                {
+                    bladeDictionary[t.biome].GetComponent<GrassController>().hexes.Add(h);
+                }
+            }
+
+            foreach (KeyValuePair<Map.Tile.Biome, GameObject> bG in bladeDictionary)
+            {
+                bG.Value.GetComponent<GrassController>().Render();
+            }
+        }
+
         #endregion
 
         #region Hex Generation & Location
@@ -530,6 +700,7 @@ namespace DeadReckoning.WorldGeneration
                     newHex.center = new Vertex(v.pos);
                     newHex.color = color;
                     hGen.vertHexes.Add(v.pos, newHex);
+                    newHex.chunk = this;
 
                     // Add vertices.
                     if (origin.vA.pos == v.pos || origin.vB.pos == v.pos || origin.vC.pos == v.pos)
@@ -684,16 +855,31 @@ namespace DeadReckoning.WorldGeneration
 
                     intElev = Mathf.RoundToInt(Mathf.Abs(intElev + (intElev * (noiseSettings.mountainBuff * weathering))));
                 }
-                else if (hex.tile.faultAdjacent)
+                else if (hex.tile.faultAdjacent && !hex.tile.shore)
                 {
                     float weathering = 1;
 
-                    if (hex.tile.shore)
-                    {
-                        weathering = noiseSettings.mountainWeathering;
-                    }
+                    // I'm thinking we'll want this to not actually affect the coast...
+                    // if we want people to not be able to pass over mountains.
+
+                    //if (hex.tile.shore)
+                    //{
+                    //    weathering = noiseSettings.mountainWeathering;
+                    //}
 
                     intElev = Mathf.RoundToInt(Mathf.Abs(intElev + (intElev * (noiseSettings.mountainSloping * weathering))));
+                }
+
+                if (hex.tile.polarCap)
+                {
+                    float oceanOffset = noiseSettings.polarCapMin * (hGen.oceanRadius - hex.center.pos.magnitude);
+
+                    if (oceanOffset < 0)
+                    {
+                        oceanOffset = 0;
+                    }
+
+                    intElev = Mathf.RoundToInt(oceanOffset + Mathf.Abs(intElev / noiseSettings.polarCapDebuff));
                 }
 
                 if (intElev % noiseSettings.terraceCutoff != 0)

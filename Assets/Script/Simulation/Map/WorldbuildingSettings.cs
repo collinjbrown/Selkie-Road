@@ -36,6 +36,9 @@ public class WorldbuildingSettings
 
     public float subarcticCutoff = 0.80f; // Earth is around 45
 
+    public float polarVariance = 0.05f;
+    public float polarCapCutoff = 0.95f;
+
     public float coldHotDesertSplit = 0.6f;
 
     public float veryHighTemperatureCutoff = 2.0f;
@@ -48,5 +51,32 @@ public class WorldbuildingSettings
     public float lowPrecipitationCutoff = -1.0f;
     public float veryLowPrecipitationCutoff = -2.0f;
 
-    public GameObject grassPrefab;
+    #region Trees
+    public bool renderTrees = true;
+    public int treesPerHex = 25;
+    public Color continentalForestColor = Color.Lerp(Color.green, Color.black, 0.5f);
+    public Color subtropicForestColor = Color.Lerp(Color.green, Color.blue, 0.5f);
+    #endregion
+
+    #region Grasses
+    public bool renderGrass = false;
+
+    public Color savannahGrassBaseColor = Color.Lerp(Color.yellow, Color.white, 0.5f);
+    public Color savannahGrassTipColor = Color.Lerp(Color.red, Color.white, 0.5f);
+
+    public Color steppeGrassBaseColor = Color.Lerp(Color.yellow, Color.white, 0.5f);
+    public Color steppeGrassTipColor = Color.Lerp(Color.yellow, Color.white, 0.75f);
+
+    public Color mediterraneanGrassBaseColor = Color.Lerp(Color.yellow, Color.white, 0.25f);
+    public Color mediterraneanGrassTipColor = Color.Lerp(Color.yellow, Color.white, 0.5f);
+
+    public Color oceanicGrassBaseColor = Color.Lerp(Color.green, Color.white, 0.25f);
+    public Color oceanicGrassTipColor = Color.Lerp(Color.green, Color.white, 0.5f);
+
+    public Color prairieGrassBaseColor = Color.Lerp(Color.yellow, Color.white, 0.1f);
+    public Color prairieGrassTipColor = Color.Lerp(Color.yellow, Color.white, 0.25f);
+
+    public Color highlandGrassBaseColor = Color.Lerp(Color.yellow, Color.red, 0.5f);
+    public Color highlandGrassTipColor = Color.Lerp(Color.red, Color.white, 0.5f);
+    #endregion
 }

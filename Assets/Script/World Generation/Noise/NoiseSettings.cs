@@ -22,4 +22,7 @@ public class NoiseSettings
     public float mountainBuff = 2;
     public float mountainWeathering = 0.5f;
     public float mountainSloping = 0.5f;
+
+    public float polarCapMin = 0.1f;
+    public float polarCapDebuff = 0.1f;
 }
