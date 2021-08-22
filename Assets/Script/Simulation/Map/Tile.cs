@@ -647,7 +647,7 @@ namespace DeadReckoning.Map
             }
 
             this.grass = grass;
-            hex.biomeColor = c;
+            hex.biomeColor = Color.Lerp(c, Color.white, Random.Range(0f, 0.5f));
             hex.uv = new Vector2((int)bio, 0);
         }
 

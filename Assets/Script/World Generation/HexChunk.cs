@@ -23,8 +23,8 @@ namespace DeadReckoning.WorldGeneration
 
         public Triangle origin;
 
+        public GameObject proceduralPrefab;
         public GameObject grassPrefab;
-        public GameObject forestPrefab;
 
         #region Hidden Variables
         [HideInInspector]
@@ -35,6 +35,8 @@ namespace DeadReckoning.WorldGeneration
 
         [HideInInspector]
         public Vector2[] mapUV;
+        [HideInInspector]
+        public Vector2[] randomUV;
         [HideInInspector]
         public Vector2[] biomeUV;
         [HideInInspector]
@@ -78,9 +80,8 @@ namespace DeadReckoning.WorldGeneration
             {
                 mesh.SetUVs(0, mapUV);
                 mesh.SetUVs(2, biomeUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = mapColors;
-                // mesh.uv = mapUV;
-                // mesh.colors = mapColors;
             }
 
             mesh.Optimize();
@@ -124,41 +125,49 @@ namespace DeadReckoning.WorldGeneration
             {
                 mesh.SetUVs(0, mapUV);
                 mesh.SetUVs(2, biomeUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = mapColors;
             }
             else if (lens == GlobeCamera.Lens.matte)
             {
-                mesh.SetUVs(0, dummyUV);
+                mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, dummyUV);
                 mesh.colors = mapColors;
             }
             else if (lens == GlobeCamera.Lens.winds)
             {
                 mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = windColors;
             }
             else if (lens == GlobeCamera.Lens.currents)
             {
                 mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = currentColors;
             }
             else if (lens == GlobeCamera.Lens.biomes)
             {
                 mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = biomeColors;
             }
             else if (lens == GlobeCamera.Lens.temperature)
             {
                 mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = temperatureColors;
             }
             else if (lens == GlobeCamera.Lens.precipitation)
             {
                 mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = precipitationColors;
             }
             else if (lens == GlobeCamera.Lens.plates)
             {
                 mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
                 mesh.colors = plateColors;
             }
 
@@ -208,9 +217,13 @@ namespace DeadReckoning.WorldGeneration
                     tMod = wallTris.Length;
                 }
 
-                mapVerts = new Vector3[(hexes.Length * (12 + 1)) + vMod];
-                mapTris = new int[(hexes.Length * (12 * 3)) + tMod];
+                int vertsPerHex = 12 + 1;
+                int trisPerHex = 12 * 3;
+
+                mapVerts = new Vector3[(hexes.Length * vertsPerHex) + vMod];
+                mapTris = new int[(hexes.Length * trisPerHex) + tMod];
                 mapUV = new Vector2[mapVerts.Length];
+                randomUV = new Vector2[mapVerts.Length];
                 biomeUV = new Vector2[mapVerts.Length];
                 dummyUV = new Vector2[mapVerts.Length];
                 mapColors = new Color[mapVerts.Length];
@@ -233,293 +246,249 @@ namespace DeadReckoning.WorldGeneration
                 {
                     Hex h = hexes[t];
 
-                    mapVerts[(t * 13) + 0 + vertOffset] = h.center.pos;                                      // A
-                    mapVerts[(t * 13) + 1 + vertOffset] = h.vertices[0].pos;                                // B
-                    mapVerts[(t * 13) + 2 + vertOffset] = h.vertices[1].pos;                                // C
-                    mapVerts[(t * 13) + 3 + vertOffset] = (h.vertices[0].pos + h.vertices[1].pos) / 2.0f;  // BC
-                    mapVerts[(t * 13) + 4 + vertOffset] = h.vertices[2].pos;                                // D
-                    mapVerts[(t * 13) + 5 + vertOffset] = (h.vertices[1].pos + h.vertices[2].pos) / 2.0f;  // CD
-                    mapVerts[(t * 13) + 6 + vertOffset] = h.vertices[3].pos;                                // E
-                    mapVerts[(t * 13) + 7 + vertOffset] = (h.vertices[2].pos + h.vertices[3].pos) / 2.0f;  // DE
-                    mapVerts[(t * 13) + 8 + vertOffset] = h.vertices[4].pos;                                // F
-                    mapVerts[(t * 13) + 9 + vertOffset] = (h.vertices[3].pos + h.vertices[4].pos) / 2.0f;  // EF
+                    mapVerts[(t * vertsPerHex) + 0 + vertOffset] = h.center.pos;                                      // A
+                    mapVerts[(t * vertsPerHex) + 1 + vertOffset] = h.vertices[0].pos;                                // B
+                    mapVerts[(t * vertsPerHex) + 2 + vertOffset] = h.vertices[1].pos;                                // C
+                    mapVerts[(t * vertsPerHex) + 3 + vertOffset] = (h.vertices[0].pos + h.vertices[1].pos) / 2.0f;  // BC
+                    mapVerts[(t * vertsPerHex) + 4 + vertOffset] = h.vertices[2].pos;                                // D
+                    mapVerts[(t * vertsPerHex) + 5 + vertOffset] = (h.vertices[1].pos + h.vertices[2].pos) / 2.0f;  // CD
+                    mapVerts[(t * vertsPerHex) + 6 + vertOffset] = h.vertices[3].pos;                                // E
+                    mapVerts[(t * vertsPerHex) + 7 + vertOffset] = (h.vertices[2].pos + h.vertices[3].pos) / 2.0f;  // DE
+                    mapVerts[(t * vertsPerHex) + 8 + vertOffset] = h.vertices[4].pos;                                // F
+                    mapVerts[(t * vertsPerHex) + 9 + vertOffset] = (h.vertices[3].pos + h.vertices[4].pos) / 2.0f;  // EF
 
-                    mapUV[(t * 13) + 0 + vertOffset] = (new Vector2(0.5f, 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f);                            // A
-                    mapUV[(t * 13) + 1 + vertOffset] = (new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);           // B
-                    mapUV[(t * 13) + 2 + vertOffset] = (new Vector2(0.5f, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);            // C
-                    mapUV[(t * 13) + 3 + vertOffset] = (new Vector2(0, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);               // BC
-                    mapUV[(t * 13) + 4 + vertOffset] = (new Vector2(1.0f, 0) + new Vector2(1.0f, 0.5f) * 0.5f);                               // D
-                    mapUV[(t * 13) + 5 + vertOffset] = (Vector2.Lerp(new Vector2(1.0f, 0), new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f); // CD
-                    mapUV[(t * 13) + 6 + vertOffset] = (new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);           // E
-                    mapUV[(t * 13) + 7 + vertOffset] = (new Vector2(0, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);              // DE
-                    mapUV[(t * 13) + 8 + vertOffset] = (new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);          // F
-                    mapUV[(t * 13) + 9 + vertOffset] = (Vector2.Lerp(new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f), new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f); // EF
+                    mapUV[(t * vertsPerHex) + 0 + vertOffset] = (new Vector2(0.5f, 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f);                            // A
+                    mapUV[(t * vertsPerHex) + 1 + vertOffset] = (new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);           // B
+                    mapUV[(t * vertsPerHex) + 2 + vertOffset] = (new Vector2(0.5f, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);            // C
+                    mapUV[(t * vertsPerHex) + 3 + vertOffset] = (new Vector2(0, Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);               // BC
+                    mapUV[(t * vertsPerHex) + 4 + vertOffset] = (new Vector2(1.0f, 0) + new Vector2(1.0f, 0.5f) * 0.5f);                               // D
+                    mapUV[(t * vertsPerHex) + 5 + vertOffset] = (Vector2.Lerp(new Vector2(1.0f, 0), new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f); // CD
+                    mapUV[(t * vertsPerHex) + 6 + vertOffset] = (new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);           // E
+                    mapUV[(t * vertsPerHex) + 7 + vertOffset] = (new Vector2(0, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);              // DE
+                    mapUV[(t * vertsPerHex) + 8 + vertOffset] = (new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f) + new Vector2(1.0f, 0.5f) * 0.5f);          // F
+                    mapUV[(t * vertsPerHex) + 9 + vertOffset] = (Vector2.Lerp(new Vector2(0.5f, -Mathf.Sqrt(3) / 2.0f), new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1.0f, 0.5f) * 0.5f); // EF
 
-                    biomeUV[(t * 13) + 0 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 1 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 2 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 3 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 4 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 5 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 6 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 7 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 8 + vertOffset] = h.uv;
-                    biomeUV[(t * 13) + 9 + vertOffset] = h.uv;
-
-                    mapColors[(t * 13) + 0 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 1 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 2 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 3 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 4 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 5 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 6 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 7 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 8 + vertOffset] = h.color;
-                    mapColors[(t * 13) + 9 + vertOffset] = h.color;
-
-                    windColors[(t * 13) + 0 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 1 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 2 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 3 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 4 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 5 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 6 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 7 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 8 + vertOffset] = h.windColor;
-                    windColors[(t * 13) + 9 + vertOffset] = h.windColor;
-
-                    currentColors[(t * 13) + 0 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 1 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 2 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 3 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 4 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 5 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 6 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 7 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 8 + vertOffset] = h.currentColor;
-                    currentColors[(t * 13) + 9 + vertOffset] = h.currentColor;
-
-                    biomeColors[(t * 13) + 0 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 1 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 2 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 3 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 4 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 5 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 6 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 7 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 8 + vertOffset] = h.biomeColor;
-                    biomeColors[(t * 13) + 9 + vertOffset] = h.biomeColor;
-
-                    precipitationColors[(t * 13) + 0 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 1 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 2 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 3 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 4 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 5 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 6 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 7 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 8 + vertOffset] = h.precipitationColor;
-                    precipitationColors[(t * 13) + 9 + vertOffset] = h.precipitationColor;
-
-                    temperatureColors[(t * 13) + 0 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 1 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 2 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 3 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 4 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 5 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 6 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 7 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 8 + vertOffset] = h.temperatureColor;
-                    temperatureColors[(t * 13) + 9 + vertOffset] = h.temperatureColor;
-
-                    if (h.tile.plate != null)
+                    float variance = Random.Range(0, 0.5f);
+                    for (int i = 0; i < 10; i++)
                     {
-                        plateColors[(t * 13) + 0 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 1 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 2 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 3 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 4 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 5 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 6 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 7 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 8 + vertOffset] = h.tile.plate.color;
-                        plateColors[(t * 13) + 9 + vertOffset] = h.tile.plate.color;
+                        randomUV[(t * vertsPerHex) + i + vertOffset] = new Vector2(variance, 0);
                     }
-                    else
+
+                    for (int i = 0; i < 10; i++)
                     {
-                        plateColors[(t * 13) + 0 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 1 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 2 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 3 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 4 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 5 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 6 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 7 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 8 + vertOffset] = Color.white;
-                        plateColors[(t * 13) + 9 + vertOffset] = Color.white;
+                        biomeUV[(t * vertsPerHex) + i + vertOffset] = h.uv;
                     }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        mapColors[(t * vertsPerHex) + i + vertOffset] = h.color;
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        windColors[(t * vertsPerHex) + i + vertOffset] = h.windColor;
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        currentColors[(t * vertsPerHex) + i + vertOffset] = h.currentColor;
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        biomeColors[(t * vertsPerHex) + i + vertOffset] = h.biomeColor;
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        precipitationColors[(t * vertsPerHex) + i + vertOffset] = h.precipitationColor;
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        temperatureColors[(t * vertsPerHex) + i + vertOffset] = h.temperatureColor;
+                    }
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        plateColors[(t * vertsPerHex) + i + vertOffset] = h.tile.plate.color;
+                    }
+                    //else
+                    //{
+                    //    plateColors[(t * 13) + 0 + vertOffset] = Color.white;
+                    //}
 
                     // Triangle One (A - BC - B)
-                    mapTris[(t * 36) + 0 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 1 + triOffset] = (t * 13) + 3 + vertOffset;
-                    mapTris[(t * 36) + 2 + triOffset] = (t * 13) + 1 + vertOffset;
+                    mapTris[(t * trisPerHex) + 0 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 1 + triOffset] = (t * vertsPerHex) + 3 + vertOffset;
+                    mapTris[(t * trisPerHex) + 2 + triOffset] = (t * vertsPerHex) + 1 + vertOffset;
 
                     // Triangle Two (A - C - BC)
-                    mapTris[(t * 36) + 3 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 4 + triOffset] = (t * 13) + 2 + vertOffset;
-                    mapTris[(t * 36) + 5 + triOffset] = (t * 13) + 3 + vertOffset;
+                    mapTris[(t * trisPerHex) + 3 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 4 + triOffset] = (t * vertsPerHex) + 2 + vertOffset;
+                    mapTris[(t * trisPerHex) + 5 + triOffset] = (t * vertsPerHex) + 3 + vertOffset;
 
                     // Triangle Three (A - CD - C)
-                    mapTris[(t * 36) + 6 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 7 + triOffset] = (t * 13) + 5 + vertOffset;
-                    mapTris[(t * 36) + 8 + triOffset] = (t * 13) + 2 + vertOffset;
+                    mapTris[(t * trisPerHex) + 6 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 7 + triOffset] = (t * vertsPerHex) + 5 + vertOffset;
+                    mapTris[(t * trisPerHex) + 8 + triOffset] = (t * vertsPerHex) + 2 + vertOffset;
 
                     // Triangle Four (A - D - CD)
-                    mapTris[(t * 36) + 9 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 10 + triOffset] = (t * 13) + 4 + vertOffset;
-                    mapTris[(t * 36) + 11 + triOffset] = (t * 13) + 5 + vertOffset;
+                    mapTris[(t * trisPerHex) + 9 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 10 + triOffset] = (t * vertsPerHex) + 4 + vertOffset;
+                    mapTris[(t * trisPerHex) + 11 + triOffset] = (t * vertsPerHex) + 5 + vertOffset;
 
                     // Triangle Five (A - DE - D)
-                    mapTris[(t * 36) + 12 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 13 + triOffset] = (t * 13) + 7 + vertOffset;
-                    mapTris[(t * 36) + 14 + triOffset] = (t * 13) + 4 + vertOffset;
+                    mapTris[(t * trisPerHex) + 12 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 13 + triOffset] = (t * vertsPerHex) + 7 + vertOffset;
+                    mapTris[(t * trisPerHex) + 14 + triOffset] = (t * vertsPerHex) + 4 + vertOffset;
 
                     // Triangle Six (A - E - DE)
-                    mapTris[(t * 36) + 15 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 16 + triOffset] = (t * 13) + 6 + vertOffset;
-                    mapTris[(t * 36) + 17 + triOffset] = (t * 13) + 7 + vertOffset;
+                    mapTris[(t * trisPerHex) + 15 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 16 + triOffset] = (t * vertsPerHex) + 6 + vertOffset;
+                    mapTris[(t * trisPerHex) + 17 + triOffset] = (t * vertsPerHex) + 7 + vertOffset;
 
                     // Triangle Seven (A - EF - E)
-                    mapTris[(t * 36) + 18 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 19 + triOffset] = (t * 13) + 9 + vertOffset;
-                    mapTris[(t * 36) + 20 + triOffset] = (t * 13) + 6 + vertOffset;
+                    mapTris[(t * trisPerHex) + 18 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 19 + triOffset] = (t * vertsPerHex) + 9 + vertOffset;
+                    mapTris[(t * trisPerHex) + 20 + triOffset] = (t * vertsPerHex) + 6 + vertOffset;
 
                     // Triangle Eight (A - F - EF)
-                    mapTris[(t * 36) + 21 + triOffset] = (t * 13) + 0 + vertOffset;
-                    mapTris[(t * 36) + 22 + triOffset] = (t * 13) + 8 + vertOffset;
-                    mapTris[(t * 36) + 23 + triOffset] = (t * 13) + 9 + vertOffset;
+                    mapTris[(t * trisPerHex) + 21 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                    mapTris[(t * trisPerHex) + 22 + triOffset] = (t * vertsPerHex) + 8 + vertOffset;
+                    mapTris[(t * trisPerHex) + 23 + triOffset] = (t * vertsPerHex) + 9 + vertOffset;
 
                     // Recheck listings.
                     if (!h.pent)
                     {
-                        mapVerts[(t * 13) + 10 + vertOffset] = h.vertices[5].pos;                                // G
-                        mapVerts[(t * 13) + 11 + vertOffset] = (h.vertices[4].pos + h.vertices[5].pos) / 2.0f;  // FG
-                        mapVerts[(t * 13) + 12 + vertOffset] = (h.vertices[5].pos + h.vertices[0].pos) / 2.0f;  // GB
+                        mapVerts[(t * vertsPerHex) + 10 + vertOffset] = h.vertices[5].pos;                                // G
+                        mapVerts[(t * vertsPerHex) + 11 + vertOffset] = (h.vertices[4].pos + h.vertices[5].pos) / 2.0f;  // FG
+                        mapVerts[(t * vertsPerHex) + 12 + vertOffset] = (h.vertices[5].pos + h.vertices[0].pos) / 2.0f;  // GB
 
-                        mapUV[(t * 13) + 10 + vertOffset] = (new Vector2(-1,0) + new Vector2(1, 0.5f)) * 0.5f;
-                        mapUV[(t * 13) + 11 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
-                        mapUV[(t * 13) + 12 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
+                        mapUV[(t * vertsPerHex) + 10 + vertOffset] = (new Vector2(-1,0) + new Vector2(1, 0.5f)) * 0.5f;
+                        mapUV[(t * vertsPerHex) + 11 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
+                        mapUV[(t * vertsPerHex) + 12 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
 
-                        biomeUV[(t * 13) + 10 + vertOffset] = h.uv;
-                        biomeUV[(t * 13) + 11 + vertOffset] = h.uv;
-                        biomeUV[(t * 13) + 12 + vertOffset] = h.uv;
-
-                        mapColors[(t * 13) + 10 + vertOffset] = h.color;
-                        mapColors[(t * 13) + 11 + vertOffset] = h.color;
-                        mapColors[(t * 13) + 12 + vertOffset] = h.color;
-
-                        windColors[(t * 13) + 10 + vertOffset] = h.windColor;
-                        windColors[(t * 13) + 11 + vertOffset] = h.windColor;
-                        windColors[(t * 13) + 12 + vertOffset] = h.windColor;
-
-                        currentColors[(t * 13) + 10 + vertOffset] = h.currentColor;
-                        currentColors[(t * 13) + 11 + vertOffset] = h.currentColor;
-                        currentColors[(t * 13) + 12 + vertOffset] = h.currentColor;
-
-                        biomeColors[(t * 13) + 10 + vertOffset] = h.biomeColor;
-                        biomeColors[(t * 13) + 11 + vertOffset] = h.biomeColor;
-                        biomeColors[(t * 13) + 12 + vertOffset] = h.biomeColor;
-
-                        temperatureColors[(t * 13) + 10 + vertOffset] = h.temperatureColor;
-                        temperatureColors[(t * 13) + 11 + vertOffset] = h.temperatureColor;
-                        temperatureColors[(t * 13) + 12 + vertOffset] = h.temperatureColor;
-
-                        precipitationColors[(t * 13) + 10 + vertOffset] = h.precipitationColor;
-                        precipitationColors[(t * 13) + 11 + vertOffset] = h.precipitationColor;
-                        precipitationColors[(t * 13) + 12 + vertOffset] = h.precipitationColor;
-
-                        if (h.tile.plate != null)
+                        for (int i = 10; i < vertsPerHex; i++)
                         {
-                            plateColors[(t * 13) + 10 + vertOffset] = h.tile.plate.color;
-                            plateColors[(t * 13) + 11 + vertOffset] = h.tile.plate.color;
-                            plateColors[(t * 13) + 12 + vertOffset] = h.tile.plate.color;
+                            biomeUV[(t * vertsPerHex) + i + vertOffset] = h.uv;
                         }
-                        else
+
+                        for (int i = 10; i < vertsPerHex; i++)
                         {
-                            plateColors[(t * 13) + 10 + vertOffset] = Color.white;
-                            plateColors[(t * 13) + 11 + vertOffset] = Color.white;
-                            plateColors[(t * 13) + 12 + vertOffset] = Color.white;
+                            randomUV[(t * vertsPerHex) + i + vertOffset] = new Vector2(variance, 0);
                         }
+
+                        for (int i = 10; i < vertsPerHex; i++)
+                        {
+                            mapColors[(t * vertsPerHex) + i + vertOffset] = h.color;
+                        }
+
+                        for (int i = 10; i < vertsPerHex; i++)
+                        {
+                            windColors[(t * vertsPerHex) + i + vertOffset] = h.windColor;
+                        }
+
+                        for (int i = 10; i < vertsPerHex; i++)
+                        {
+                            currentColors[(t * vertsPerHex) + i + vertOffset] = h.currentColor;
+                        }
+
+                        for (int i = 10; i < vertsPerHex; i++)
+                        {
+                            biomeColors[(t * vertsPerHex) + i + vertOffset] = h.biomeColor;
+                        }
+
+                        for (int i = 10; i < vertsPerHex; i++)
+                        {
+                            temperatureColors[(t * vertsPerHex) + i + vertOffset] = h.temperatureColor;
+                        }
+
+                        for (int i = 10; i < vertsPerHex; i++)
+                        {
+                            precipitationColors[(t * vertsPerHex) + i + vertOffset] = h.precipitationColor;
+                        }
+
+                        for (int i = 10; i < vertsPerHex; i++)
+                        {
+                            plateColors[(t * vertsPerHex) + i + vertOffset] = h.tile.plate.color;
+                        }
+                        //else
+                        //{
+                        //    plateColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
+                        //}
 
                         // Triangle Nine (A - FG - F)
-                        mapTris[(t * 36) + 24 + triOffset] = (t * 13) + 0 + vertOffset;
-                        mapTris[(t * 36) + 25 + triOffset] = (t * 13) + 11 + vertOffset;
-                        mapTris[(t * 36) + 26 + triOffset] = (t * 13) + 8 + vertOffset;
+                        mapTris[(t * trisPerHex) + 24 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                        mapTris[(t * trisPerHex) + 25 + triOffset] = (t * vertsPerHex) + 11 + vertOffset;
+                        mapTris[(t * trisPerHex) + 26 + triOffset] = (t * vertsPerHex) + 8 + vertOffset;
 
                         // Triangle Ten (A - G - FG)
-                        mapTris[(t * 36) + 27 + triOffset] = (t * 13) + 0 + vertOffset;
-                        mapTris[(t * 36) + 28 + triOffset] = (t * 13) + 10 + vertOffset;
-                        mapTris[(t * 36) + 29 + triOffset] = (t * 13) + 11 + vertOffset;
+                        mapTris[(t * trisPerHex) + 27 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                        mapTris[(t * trisPerHex) + 28 + triOffset] = (t * vertsPerHex) + 10 + vertOffset;
+                        mapTris[(t * trisPerHex) + 29 + triOffset] = (t * vertsPerHex) + 11 + vertOffset;
 
                         // Triangle Eleven (A - GB - G)
-                        mapTris[(t * 36) + 30 + triOffset] = (t * 13) + 0 + vertOffset;
-                        mapTris[(t * 36) + 31 + triOffset] = (t * 13) + 12 + vertOffset;
-                        mapTris[(t * 36) + 32 + triOffset] = (t * 13) + 10 + vertOffset;
+                        mapTris[(t * trisPerHex) + 30 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                        mapTris[(t * trisPerHex) + 31 + triOffset] = (t * vertsPerHex) + 12 + vertOffset;
+                        mapTris[(t * trisPerHex) + 32 + triOffset] = (t * vertsPerHex) + 10 + vertOffset;
 
                         // Triangle Twelve (A - B - GB)
-                        mapTris[(t * 36) + 33 + triOffset] = (t * 13) + 0 + vertOffset;
-                        mapTris[(t * 36) + 34 + triOffset] = (t * 13) + 1 + vertOffset;
-                        mapTris[(t * 36) + 35 + triOffset] = (t * 13) + 12 + vertOffset;
+                        mapTris[(t * trisPerHex) + 33 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                        mapTris[(t * trisPerHex) + 34 + triOffset] = (t * vertsPerHex) + 1 + vertOffset;
+                        mapTris[(t * trisPerHex) + 35 + triOffset] = (t * vertsPerHex) + 12 + vertOffset;
 
                         vertOffset = 0;
                         triOffset = 0;
                     }
                     else
                     {
-                        mapVerts[(t * 13) + 10 + vertOffset] = (h.vertices[4].pos + h.vertices[0].pos) / 2.0f;  // FB
+                        mapVerts[(t * vertsPerHex) + 10 + vertOffset] = (h.vertices[4].pos + h.vertices[0].pos) / 2.0f;  // FB
 
-                        mapUV[(t * 13) + 10 + vertOffset] = Vector2.Lerp(new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f);
+                        mapUV[(t * vertsPerHex) + 10 + vertOffset] = Vector2.Lerp(new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f);
 
-                        biomeUV[(t * 13) + 10 + vertOffset] = h.uv;
+                        biomeUV[(t * vertsPerHex) + 10 + vertOffset] = h.uv;
 
-                        mapColors[(t * 13) + 10 + vertOffset] = h.color;
+                        randomUV[(t * vertsPerHex) + 10 + vertOffset] = new Vector2(variance, 0);
 
-                        windColors[(t * 13) + 10 + vertOffset] = h.windColor;
+                        mapColors[(t * vertsPerHex) + 10 + vertOffset] = h.color;
 
-                        currentColors[(t * 13) + 10 + vertOffset] = h.currentColor;
+                        windColors[(t * vertsPerHex) + 10 + vertOffset] = h.windColor;
 
-                        biomeColors[(t * 13) + 10 + vertOffset] = h.biomeColor;
+                        currentColors[(t * vertsPerHex) + 10 + vertOffset] = h.currentColor;
 
-                        precipitationColors[(t * 13) + 10 + vertOffset] = h.precipitationColor;
+                        biomeColors[(t * vertsPerHex) + 10 + vertOffset] = h.biomeColor;
 
-                        temperatureColors[(t * 13) + 10 + vertOffset] = h.temperatureColor;
+                        precipitationColors[(t * vertsPerHex) + 10 + vertOffset] = h.precipitationColor;
+
+                        temperatureColors[(t * vertsPerHex) + 10 + vertOffset] = h.temperatureColor;
 
                         if (h.tile.plate != null)
                         {
-                            plateColors[(t * 13) + 10 + vertOffset] = h.tile.plate.color;
+                            plateColors[(t * vertsPerHex) + 10 + vertOffset] = h.tile.plate.color;
                         }
                         else
                         {
-                            plateColors[(t * 13) + 10 + vertOffset] = Color.white;
+                            plateColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
                         }
 
                         // Triangle Nine (A - FB - F)
-                        mapTris[(t * 36) + 24 + triOffset] = (t * 13) + 0 + vertOffset;
-                        mapTris[(t * 36) + 25 + triOffset] = (t * 13) + 10 + vertOffset;
-                        mapTris[(t * 36) + 26 + triOffset] = (t * 13) + 8 + vertOffset;
+                        mapTris[(t * trisPerHex) + 24 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                        mapTris[(t * trisPerHex) + 25 + triOffset] = (t * vertsPerHex) + 10 + vertOffset;
+                        mapTris[(t * trisPerHex) + 26 + triOffset] = (t * vertsPerHex) + 8 + vertOffset;
 
                         // Triangle Ten (A - B - FB)
-                        mapTris[(t * 36) + 27 + triOffset] = (t * 13) + 0 + vertOffset;
-                        mapTris[(t * 36) + 28 + triOffset] = (t * 13) + 1 + vertOffset;
-                        mapTris[(t * 36) + 29 + triOffset] = (t * 13) + 10 + vertOffset;
+                        mapTris[(t * trisPerHex) + 27 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
+                        mapTris[(t * trisPerHex) + 28 + triOffset] = (t * vertsPerHex) + 1 + vertOffset;
+                        mapTris[(t * trisPerHex) + 29 + triOffset] = (t * vertsPerHex) + 10 + vertOffset;
 
                         vertOffset = -2;
                         triOffset = -6;
                     }
                 }
 
-                vMod = hexes.Length * (12 + 1);
-                tMod = hexes.Length * (12 * 3);
+                vMod = hexes.Length * vertsPerHex;
+                tMod = hexes.Length * trisPerHex;
 
                 // Add the wall verts.
                 for (int i = 0; i < wallVerts.Length; i++)
@@ -561,12 +530,13 @@ namespace DeadReckoning.WorldGeneration
             List<ProceduralGeneration.Tree> continentalPines = new List<ProceduralGeneration.Tree>();
             List<ProceduralGeneration.Tree> subtropicPines = new List<ProceduralGeneration.Tree>();
             List<ProceduralGeneration.Tree> highlandPines = new List<ProceduralGeneration.Tree>();
+            List<ProceduralGeneration.Tree> subarcticPines = new List<ProceduralGeneration.Tree>();
 
             for (int i = 0; i < hexes.Length; i++)
             {
                 Hex h = hexes[i];
 
-                if (h.tile.biome == Map.Tile.Biome.humidContinental || h.tile.biome == Map.Tile.Biome.humidSubtropic || h.tile.biome == Map.Tile.Biome.highlands)
+                if (h.tile.biome == Map.Tile.Biome.humidContinental || h.tile.biome == Map.Tile.Biome.humidSubtropic || h.tile.biome == Map.Tile.Biome.highlands || h.tile.biome == Map.Tile.Biome.subarctic)
                 {
                     Vector3[] stumpPoints = new Vector3[hGen.worldSettings.treesPerHex];
 
@@ -598,6 +568,10 @@ namespace DeadReckoning.WorldGeneration
                     {
                         canopyColor = hGen.worldSettings.subtropicForestColor;
                     }
+                    else if (h.tile.biome == Map.Tile.Biome.subarctic)
+                    {
+                        canopyColor = hGen.worldSettings.subarcticForestColor;
+                    }
                     else
                     {
                         canopyColor = hGen.worldSettings.highlandForestColor;
@@ -623,6 +597,10 @@ namespace DeadReckoning.WorldGeneration
                         {
                             subtropicPines.Add(newTree);
                         }
+                        else if (h.tile.biome == Map.Tile.Biome.subarctic)
+                        {
+                            subarcticPines.Add(newTree);
+                        }
                         else
                         {
                             highlandPines.Add(newTree);
@@ -633,8 +611,8 @@ namespace DeadReckoning.WorldGeneration
 
             if (continentalPines.Count > 0 && continentalPines.Count < 1000)
             {
-                GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
-                g.GetComponent<Map.TreeContainer>().MapTrees(continentalPines);
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(continentalPines);
                 g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.continentalForestColor);
             }
             else
@@ -643,15 +621,15 @@ namespace DeadReckoning.WorldGeneration
                 {
                     int takeAmount = Mathf.Min(999, continentalPines.Count - i);
 
-                    GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
-                    g.GetComponent<Map.TreeContainer>().MapTrees(continentalPines.Skip(i).Take(takeAmount).ToList());
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(continentalPines.Skip(i).Take(takeAmount).ToList());
                     g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.continentalForestColor);
                 }
             }
             if (subtropicPines.Count > 0 && subtropicPines.Count < 1000)
             {
-                GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
-                g.GetComponent<Map.TreeContainer>().MapTrees(subtropicPines);
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(subtropicPines);
                 g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subtropicForestColor);
             }
             else
@@ -660,15 +638,32 @@ namespace DeadReckoning.WorldGeneration
                 {
                     int takeAmount = Mathf.Min(999, subtropicPines.Count - i);
 
-                    GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
-                    g.GetComponent<Map.TreeContainer>().MapTrees(subtropicPines.Skip(i).Take(takeAmount).ToList());
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(subtropicPines.Skip(i).Take(takeAmount).ToList());
                     g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subtropicForestColor);
+                }
+            }
+            if (subarcticPines.Count > 0 && subarcticPines.Count < 1000)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(subarcticPines);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subarcticForestColor);
+            }
+            else
+            {
+                for (int i = 0; i < subarcticPines.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, subarcticPines.Count - i);
+
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(subarcticPines.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subarcticForestColor);
                 }
             }
             if (highlandPines.Count > 0 && highlandPines.Count < 1000)
             {
-                GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
-                g.GetComponent<Map.TreeContainer>().MapTrees(highlandPines);
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(highlandPines);
                 g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.highlandForestColor);
             }
             else
@@ -677,12 +672,41 @@ namespace DeadReckoning.WorldGeneration
                 {
                     int takeAmount = Mathf.Min(999, highlandPines.Count - i);
 
-                    GameObject g = Instantiate(forestPrefab, this.transform.position, Quaternion.identity, this.transform);
-                    g.GetComponent<Map.TreeContainer>().MapTrees(highlandPines.Skip(i).Take(takeAmount).ToList());
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(highlandPines.Skip(i).Take(takeAmount).ToList());
                     g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.highlandForestColor);
                 }
             }
 
+        }
+        public void SpawnPeaks(HexSphereGenerator hGen)
+        {
+            List<ProceduralGeneration.RockStructure> peaks = new List<ProceduralGeneration.RockStructure>();
+
+            for (int i = 0; i < hexes.Length; i++)
+            {
+                Hex h = hexes[i];
+
+                if (h.tile.fault)
+                {
+                    Vector3[] basePoints = new Vector3[h.vertices.Length];
+
+                    for (int v = 0; v < h.vertices.Length; v++)
+                    {
+                        basePoints[v] = h.vertices[v].pos;
+                    }
+
+                    ProceduralGeneration.RockStructure newPeak = new ProceduralGeneration.RockStructure(basePoints, true, hGen.worldSettings.peakHeight, hGen.worldSettings.peakSteepness, Color.red);
+                    peaks.Add(newPeak);
+                }
+            }
+
+            if (peaks.Count > 0)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(peaks);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.mountainColor);
+            }
         }
         public void SpawnGrass(HexSphereGenerator hGen)
         {
@@ -964,6 +988,7 @@ namespace DeadReckoning.WorldGeneration
                 }
 
                 hex.center.pos += normal * intElev;
+
 
                 for (int i = 0; i < hex.vertices.Length; i++)
                 {

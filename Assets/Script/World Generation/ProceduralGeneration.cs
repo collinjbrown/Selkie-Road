@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace DeadReckoning.Procedural
 {
@@ -95,8 +96,8 @@ namespace DeadReckoning.Procedural
                 Vector3 up = relativeAxes[1];
                 Vector3 right = relativeAxes[2];
 
-                float widthVariance = Random.Range(1, 1 + settings.pineWidthtVariation);
-                float heightVariance = Random.Range(1, 1 + settings.pineHeightVariation);
+                float widthVariance = UnityEngine.Random.Range(1, 1 + settings.pineWidthtVariation);
+                float heightVariance = UnityEngine.Random.Range(1, 1 + settings.pineHeightVariation);
 
                 float trunkWidth = settings.pineTrunkWidth;
                 float trunkHeight = settings.pineTrunkHeight;
@@ -230,6 +231,19 @@ namespace DeadReckoning.Procedural
             };
         }
 
+        public class RockStructure : ProceduralObject
+        {
+            public RockStructure(Vector3[] basePoints, bool peak, int height, float facets, Color primaryColor)
+            {
+                // We take the set of base points, create a ton of points between them, triangulate those points, then inflate them up along the y-axis...
+                // depending on how close they are to the center, in order to make an irregular peak-like shape.
+
+                List<Vector3> verts = new List<Vector3>(basePoints);
+                List<int> tris = new List<int>();
+
+
+            }
+        }
 
     }
 }

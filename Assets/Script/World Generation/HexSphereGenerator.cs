@@ -214,6 +214,10 @@ namespace DeadReckoning.WorldGeneration
                         {
                             c.SpawnForests(this);
                         }
+                        if (worldSettings.renderMountains)
+                        {
+                            c.SpawnPeaks(this);
+                        }
                         c.Render(true);
                     }
                 }

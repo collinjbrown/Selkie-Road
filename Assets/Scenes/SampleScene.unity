@@ -1879,7 +1879,7 @@ MonoBehaviour:
   planetPrefab: {fileID: 5788319097987877284, guid: feeb66bd8eb7f9648a2da73e51528e89,
     type: 3}
   noiseSettings:
-    seed: 0
+    seed: 189237162
     strength: 17
     numLayers: 5
     baseRoughness: 0.05
@@ -1920,11 +1920,16 @@ MonoBehaviour:
     highPrecipitationCutoff: 2
     lowPrecipitationCutoff: 0
     veryLowPrecipitationCutoff: -1
+    renderMountains: 1
+    peakHeight: 4
+    peakSteepness: 0.1
+    mountainColor: {r: 0.5, g: 0.5, b: 0, a: 1}
     renderTrees: 1
     treesPerHex: 25
     continentalForestColor: {r: 0, g: 0.5, b: 0, a: 1}
     subtropicForestColor: {r: 0, g: 0.5, b: 0.5, a: 1}
     highlandForestColor: {r: 0, g: 0.5, b: 0.5, a: 1}
+    subarcticForestColor: {r: 0.56189924, g: 0.6509434, b: 0.6289992, a: 1}
     renderGrass: 0
     savannahGrassBaseColor: {r: 1, g: 0.9607843, b: 0.50784314, a: 1}
     savannahGrassTipColor: {r: 1, g: 0.5, b: 0.5, a: 1}

@@ -96,13 +96,15 @@ MonoBehaviour:
   number: 0
   neighbors: 
   color: {r: 0, g: 0, b: 0, a: 0}
-  grassPrefab: {fileID: 3526213391996622055, guid: 6ea3f0eebf20ba4419e99ccac4dd79eb,
+  proceduralPrefab: {fileID: 1311213073869468679, guid: d0ae5b721e7ec5d46ba31cca5e6eb19e,
     type: 3}
-  forestPrefab: {fileID: 4933955944917394684, guid: 5401b83bb640b8a4a8a1f77041372c27,
+  grassPrefab: {fileID: 3526213391996622055, guid: 6ea3f0eebf20ba4419e99ccac4dd79eb,
     type: 3}
   mapVerts: []
   mapTris: 
   mapUV: []
+  randomUV: []
+  biomeUV: []
   dummyUV: []
   mapColors: []
   windColors: []

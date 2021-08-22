@@ -51,12 +51,20 @@ public class WorldbuildingSettings
     public float lowPrecipitationCutoff = -1.0f;
     public float veryLowPrecipitationCutoff = -2.0f;
 
+    #region Mountains
+    public bool renderMountains = true;
+    public int peakHeight = 4;
+    public float peakSteepness = 0.025f;
+    public Color mountainColor = Color.Lerp(Color.green, Color.red, 0.5f);
+    #endregion
+
     #region Trees
     public bool renderTrees = true;
     public int treesPerHex = 25;
     public Color continentalForestColor = Color.Lerp(Color.green, Color.black, 0.5f);
     public Color subtropicForestColor = Color.Lerp(Color.green, Color.blue, 0.5f);
     public Color highlandForestColor = Color.Lerp(Color.green, Color.blue, 0.5f);
+    public Color subarcticForestColor = Color.Lerp(Color.green, Color.blue, 0.75f);
     #endregion
 
     #region Grasses

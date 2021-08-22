@@ -119,6 +119,7 @@ public class GlobeCamera : MonoBehaviour
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
             cameraRadius += Input.GetAxis("Mouse ScrollWheel") * scrollSpeed * Time.deltaTime;
+
             this.gameObject.transform.position = this.gameObject.transform.position.normalized * cameraRadius;
         }
 
