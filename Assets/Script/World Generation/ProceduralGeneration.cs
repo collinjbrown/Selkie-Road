@@ -245,5 +245,114 @@ namespace DeadReckoning.Procedural
             }
         }
 
+        public class ProcVert
+        {
+            public Vector3 position;
+            public HalfEdge halfEdge;
+            public ProcTriangle triangle;
+
+            public ProcVert prevVertex;
+            public ProcVert nextVertex;
+
+            public bool isReflex;
+            public bool isConvex;
+            public bool isEar;
+
+            public ProcVert(Vector3 position)
+            {
+                this.position = position;
+            }
+
+            public Vector2 GetPos2DXZ()
+            {
+                Vector2 pos2D = new Vector2(position.x, position.y);
+                return pos2D;
+            }
+        }
+
+        public class Edge
+        {
+            public ProcVert v1;
+            public ProcVert v2;
+
+            public bool isIntersecting = false;
+
+            public Edge(ProcVert v1, ProcVert v2)
+            {
+                this.v1 = v1;
+                this.v2 = v2;
+            }
+
+            public Edge(Vector3 v1, Vector3 v2)
+            {
+                this.v1 = new ProcVert(v1);
+                this.v2 = new ProcVert(v2);
+            }
+
+            public Vector2 GetVertex2D(ProcVert v)
+            {
+                return new Vector2(v.position.x, v.position.y);
+            }
+
+            public void FlipEdge()
+            {
+                ProcVert temp = v1;
+                v1 = v2;
+                v2 = temp;
+            }
+        }
+
+        public class HalfEdge
+        {
+            public ProcVert v;
+            public ProcTriangle t;
+
+            public HalfEdge nextEdge;
+            public HalfEdge prevEdge;
+            public HalfEdge oppoEdge;
+
+            public HalfEdge(ProcVert v)
+            {
+                this.v = v;
+            }
+        }
+
+        public class ProcTriangle
+        {
+            public ProcVert v1;
+            public ProcVert v2;
+            public ProcVert v3;
+
+            public HalfEdge halfEdge;
+
+            public ProcTriangle(ProcVert v1, ProcVert v2, ProcVert v3)
+            {
+                this.v1 = v1;
+                this.v2 = v2;
+                this.v3 = v3;
+            }
+
+            public ProcTriangle(Vector3 v1, Vector3 v2, Vector3 v3)
+            {
+                this.v1 = new ProcVert(v1);
+                this.v2 = new ProcVert(v2);
+                this.v3 = new ProcVert(v3);
+            }
+
+            public ProcTriangle(HalfEdge halfEdge)
+            {
+                this.halfEdge = halfEdge;
+            }
+
+            public void ChangeOrientation()
+            {
+                ProcVert temp = this.v1;
+
+                this.v1 = this.v2;
+
+                this.v2 = temp;
+            }
+        }
+
     }
 }
