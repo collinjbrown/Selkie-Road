@@ -52,9 +52,9 @@ public class WorldbuildingSettings
     public float veryLowPrecipitationCutoff = -2.0f;
 
     #region Mountains
-    public bool renderMountains = true;
-    public int peakHeight = 4;
-    public float peakSteepness = 0.025f;
+    public bool renderMountains = false;
+    public float peakHeight = 0.25f;
+    public int peakFacets = 10;
     public Color mountainColor = Color.Lerp(Color.green, Color.red, 0.5f);
     #endregion
 

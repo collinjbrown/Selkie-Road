@@ -13,11 +13,13 @@ namespace DeadReckoning.Map
 
         Vector3[] verts;
         int[] tris;
+        Vector2[] uvs;
 
         public void MapObjects(List<ProceduralGeneration.RockStructure> objs)
         {
             List<Vector3> rawVerts = new List<Vector3>();
             List<int> rawTris = new List<int>();
+            List<Vector2> rawUVs = new List<Vector2>();
 
             foreach (ProceduralGeneration.RockStructure o in objs)
             {
@@ -28,17 +30,19 @@ namespace DeadReckoning.Map
                     triConversion[i] = o.triangles[i] + rawVerts.Count;
                 }
 
+                rawUVs.AddRange(o.uv3);
                 rawTris.AddRange(triConversion);
                 rawVerts.AddRange(o.vertices);
             }
 
             verts = rawVerts.ToArray();
             tris = rawTris.ToArray();
+            uvs = rawUVs.ToArray();
 
             vertCount = rawVerts.Count;
             triCount = rawTris.Count;
 
-            Render();
+            Render(true);
         }
 
         public void MapObjects(List<ProceduralGeneration.Tree> objs)
@@ -65,7 +69,7 @@ namespace DeadReckoning.Map
             vertCount = rawVerts.Count;
             triCount = rawTris.Count;
 
-            Render();
+            Render(false);
         }
 
         public void MapObjects(List<ProceduralGeneration.ProceduralObject> objs)
@@ -92,16 +96,21 @@ namespace DeadReckoning.Map
             vertCount = rawVerts.Count;
             triCount = rawTris.Count;
 
-            Render();
+            Render(false);
         }
 
-        void Render()
+        void Render(bool uv)
         {
             Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
 
             mesh.Clear();
             mesh.vertices = verts;
             mesh.triangles = tris;
+
+            if (uv)
+            {
+                mesh.SetUVs(3, uvs);
+            }
 
             mesh.RecalculateNormals();
             //mesh.RecalculateBounds();

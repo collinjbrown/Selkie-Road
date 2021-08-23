@@ -1921,9 +1921,9 @@ MonoBehaviour:
     lowPrecipitationCutoff: 0
     veryLowPrecipitationCutoff: -1
     renderMountains: 1
-    peakHeight: 4
-    peakSteepness: 0.1
-    mountainColor: {r: 0.5, g: 0.5, b: 0, a: 1}
+    peakHeight: 2
+    peakFacets: 10
+    mountainColor: {r: 0.31132078, g: 0.31132078, b: 0.31132078, a: 1}
     renderTrees: 1
     treesPerHex: 25
     continentalForestColor: {r: 0, g: 0.5, b: 0, a: 1}

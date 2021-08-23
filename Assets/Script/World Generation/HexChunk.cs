@@ -687,7 +687,7 @@ namespace DeadReckoning.WorldGeneration
             {
                 Hex h = hexes[i];
 
-                if (h.tile.fault)
+                if (h.tile.fault && !h.pent)
                 {
                     Vector3[] basePoints = new Vector3[h.vertices.Length];
 
@@ -696,7 +696,7 @@ namespace DeadReckoning.WorldGeneration
                         basePoints[v] = h.vertices[v].pos;
                     }
 
-                    ProceduralGeneration.RockStructure newPeak = new ProceduralGeneration.RockStructure(basePoints, true, hGen.worldSettings.peakHeight, hGen.worldSettings.peakSteepness, Color.red);
+                    ProceduralGeneration.RockStructure newPeak = new ProceduralGeneration.RockStructure(h.center.pos, basePoints, hGen.worldSettings.peakHeight);
                     peaks.Add(newPeak);
                 }
             }
@@ -989,6 +989,10 @@ namespace DeadReckoning.WorldGeneration
 
                 hex.center.pos += normal * intElev;
 
+                //if (hex.tile.fault)
+                //{
+                //    hex.center.pos += hex.center.pos.normalized * Random.Range(hGen.worldSettings.peakHeight, hGen.worldSettings.peakHeight * 2);
+                //}
 
                 for (int i = 0; i < hex.vertices.Length; i++)
                 {
