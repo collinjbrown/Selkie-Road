@@ -206,18 +206,7 @@ namespace DeadReckoning.WorldGeneration
 
                     foreach (HexChunk c in chunks)
                     {
-                        if (worldSettings.renderGrass)
-                        {
-                            c.SpawnGrass(this);
-                        }
-                        if (worldSettings.renderTrees)
-                        {
-                            c.SpawnForests(this);
-                        }
-                        if (worldSettings.renderMountains)
-                        {
-                            c.SpawnPeaks(this);
-                        }
+                        c.SpawnObjects(this);
                         c.Render(true);
                     }
                 }

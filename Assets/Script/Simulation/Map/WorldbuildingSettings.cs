@@ -20,6 +20,8 @@ public class WorldbuildingSettings
     [Range(0f, 1.0f)]
     public float windCurrentCutoff = 0.75f;
 
+    public float biomeVariance = 0.1f;
+
     public float rainForestCutoff = 0.1f; // Earth is around 10.
 
     public float savannahCutoff = 0.2f; // Earth is around 20.
@@ -52,19 +54,37 @@ public class WorldbuildingSettings
     public float veryLowPrecipitationCutoff = -2.0f;
 
     #region Mountains
-    public bool renderMountains = false;
+    public bool renderMountains = true;
     public float peakHeight = 0.25f;
     public int peakFacets = 10;
     public Color mountainColor = Color.Lerp(Color.green, Color.red, 0.5f);
     #endregion
 
+    #region Boulders
+    public bool renderBoulders = true;
+    public int bouldersPerHex = 1;
+    public int boulderChance = 95;
+    public Color boulderColor = Color.grey;
+    #endregion
+
     #region Trees
     public bool renderTrees = true;
-    public int treesPerHex = 25;
+    public int pineTreesPerHex = 25;
+    public int tropicalTreesPerHex = 10;
+    public int coastalTreesPerHex = 10;
+    public int coastalTreeChance = 90;
+
     public Color continentalForestColor = Color.Lerp(Color.green, Color.black, 0.5f);
     public Color subtropicForestColor = Color.Lerp(Color.green, Color.blue, 0.5f);
     public Color highlandForestColor = Color.Lerp(Color.green, Color.blue, 0.5f);
     public Color subarcticForestColor = Color.Lerp(Color.green, Color.blue, 0.75f);
+
+    public Color tropicalForestColor = Color.green;
+    public Color monsoonForestColor = Color.Lerp(Color.green, Color.blue, 0.75f);
+    public Color savannaForestColor = Color.Lerp(Color.yellow, Color.red, 0.5f);
+
+    public Color mediterraneanForestColor = Color.Lerp(Color.yellow, Color.green, 0.25f);
+    public Color prairieForestColor = Color.Lerp(Color.yellow, Color.red, 0.25f);
     #endregion
 
     #region Grasses

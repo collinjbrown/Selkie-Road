@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace DeadReckoning.Abstracts
+namespace DeadReckoning.Constructs
 {
     public class Structure
     {
@@ -22,11 +22,19 @@ namespace DeadReckoning.Abstracts
 
     public class Culture
     {
-
+        public bool surnamingScheme = true;
+        public bool originNamingScheme = true;
     }
 
     public class Religion
     {
 
+    }
+
+    public class Language
+    {
+        public bool forwardNamingScheme = true;
+        public bool headInitial = true;
+        public string basicGenitive = "of";
     }
 }

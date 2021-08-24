@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DeadReckoning.WorldGeneration;
-using DeadReckoning.Abstracts;
+using DeadReckoning.Constructs;
 
 
 namespace DeadReckoning.Map
@@ -662,6 +662,8 @@ namespace DeadReckoning.Map
             precipitation = EstimatePrecipitation();
             temperature = EstimateTemperature(hGen);
 
+            float r = Random.Range(-hGen.worldSettings.biomeVariance, hGen.worldSettings.biomeVariance);
+
             // Deserts (in rain shadows)
             if (SearchForMountains(windDirection) && !fault && !faultAdjacent) // Deserts (in mountain rainshadows).
             {
@@ -702,7 +704,7 @@ namespace DeadReckoning.Map
             }
 
             // Rainforests (near equator)
-            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.rainForestCutoff)
+            if (Mathf.Abs(pos.y - worldCenter.y) + r <= worldRadius * map.settings.rainForestCutoff)
             {
                 //if (temperature == Gradient.high && precipitation == Gradient.high
                 //    || temperature == Gradient.high && precipitation == Gradient.veryHigh
@@ -714,7 +716,7 @@ namespace DeadReckoning.Map
             }
 
             // Savannahs (near equator, further out)
-            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.savannahCutoff)
+            if (Mathf.Abs(pos.y - worldCenter.y) + r <= worldRadius * map.settings.savannahCutoff)
             {
                 if (temperature == Gradient.high && precipitation == Gradient.low
                     || temperature == Gradient.high && precipitation == Gradient.veryLow
@@ -726,34 +728,34 @@ namespace DeadReckoning.Map
             }
 
             // Hot steppe (near equator, around savannahs and deserts).
-            if (Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.hotSteppeCutoff && biome == Biome.none)
+            if (Mathf.Abs(pos.y - worldCenter.y) + r <= worldRadius * map.settings.hotSteppeCutoff && biome == Biome.none)
             {
                 SetBiome(Biome.hotSteppe, true, Gradient.high, true, Gradient.low, Color.Lerp(Color.red, Color.yellow, 0.25f), true);
             }
 
             // Monsoon (where onshore winds and warm currents meet (kinda rare).
             if (shore && windDirection != currentDirection && currentHeat == CurrentHeat.warm
-                && Mathf.Abs(pos.y - worldCenter.y) <= worldRadius * map.settings.monsoonCutoff)
+                && Mathf.Abs(pos.y - worldCenter.y) + r <= worldRadius * map.settings.monsoonCutoff)
             {
                 SetBiome(Biome.tropicalMonsoon, true, Gradient.high, true, Gradient.high, Color.magenta, false);
             }
 
             // Mediterranean (cold currents)
-            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.mediterraneanCutoff
+            if (Mathf.Abs(pos.y - worldCenter.y) + r > worldRadius * map.settings.mediterraneanCutoff
                 && currentHeat == CurrentHeat.cold)
             {
                 SetBiome(Biome.mediterranean, true, Gradient.mid, true, Gradient.mid, Color.yellow, true);
             }
 
             // Oceanic (warm currents)
-            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.mediterraneanCutoff
+            if (Mathf.Abs(pos.y - worldCenter.y) + r > worldRadius * map.settings.mediterraneanCutoff
                 && currentHeat == CurrentHeat.warm)
             {
                 SetBiome(Biome.oceanic, true, Gradient.mid, true, Gradient.veryHigh, Color.green, true);
             }
 
             // Humid subtropics: wet, dense forests, usually interior.
-            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.humidSubtropicCutoff)
+            if (Mathf.Abs(pos.y - worldCenter.y) + r > worldRadius * map.settings.humidSubtropicCutoff)
             {
                 if (temperature == Gradient.high && precipitation == Gradient.high
                     || temperature == Gradient.high && precipitation == Gradient.veryHigh
@@ -765,7 +767,7 @@ namespace DeadReckoning.Map
             }
 
             // Forests and prairies.
-            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.humidContinentalCutoff
+            if (Mathf.Abs(pos.y - worldCenter.y) + r > worldRadius * map.settings.humidContinentalCutoff
                 && biome == Biome.none)
             {
                 if (precipitation == Gradient.low || precipitation == Gradient.veryLow)
@@ -779,17 +781,17 @@ namespace DeadReckoning.Map
             }
 
             // Subarctic (think Siberia)
-            if (Mathf.Abs(pos.y - worldCenter.y) > worldRadius * map.settings.subarcticCutoff)
+            if (Mathf.Abs(pos.y - worldCenter.y) + r > worldRadius * map.settings.subarcticCutoff)
             {
                 SetBiome(Biome.subarctic, true, Gradient.veryLow, true, Gradient.low, Color.Lerp(Color.cyan, Color.black, 0.7f), false);
             }
 
             // Mountain & Highlands
-            if (fault)
+            if (fault && !shore)
             {
                 SetBiome(Biome.mountain, true, Gradient.veryLow, false, Gradient.mid, Color.white, false);
             }
-            else if (faultAdjacent) // Highlands
+            else if (faultAdjacent || fault && shore) // Highlands
             {
                 SetBiome(Biome.highlands, true, Gradient.low, false, Gradient.mid, Color.Lerp(Color.green, Color.white, 0.75f), true);
             }
@@ -837,6 +839,8 @@ namespace DeadReckoning.Map
             {
                 temperatureEstimate--;
             }
+
+            temperatureEstimate += Random.Range(-1, 2);
 
             if (temperatureEstimate >= map.settings.veryHighTemperatureCutoff)
             {
@@ -896,6 +900,8 @@ namespace DeadReckoning.Map
             {
                 precipitationEstimate--;
             }
+
+            precipitationEstimate += Random.Range(-1, 2);
 
             if (precipitationEstimate >= map.settings.veryHighPrecipitationCutoff)
             {

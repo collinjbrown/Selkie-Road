@@ -525,90 +525,251 @@ namespace DeadReckoning.WorldGeneration
             }
         }
 
-        public void SpawnForests(HexSphereGenerator hGen)
+        public void SpawnObjects(HexSphereGenerator hGen)
         {
+            List<ProceduralGeneration.RockStructure> peaks = new List<ProceduralGeneration.RockStructure>();
+            List<ProceduralGeneration.RockStructure> boulders = new List<ProceduralGeneration.RockStructure>();
+
             List<ProceduralGeneration.Tree> continentalPines = new List<ProceduralGeneration.Tree>();
             List<ProceduralGeneration.Tree> subtropicPines = new List<ProceduralGeneration.Tree>();
             List<ProceduralGeneration.Tree> highlandPines = new List<ProceduralGeneration.Tree>();
             List<ProceduralGeneration.Tree> subarcticPines = new List<ProceduralGeneration.Tree>();
 
+            List<ProceduralGeneration.Tree> tropicalTrees = new List<ProceduralGeneration.Tree>();
+            List<ProceduralGeneration.Tree> monsoonTrees = new List<ProceduralGeneration.Tree>();
+            List<ProceduralGeneration.Tree> savannaTrees = new List<ProceduralGeneration.Tree>();
+
+            List<ProceduralGeneration.Tree> mediterraneanTrees = new List<ProceduralGeneration.Tree>();
+            List<ProceduralGeneration.Tree> prairieTrees = new List<ProceduralGeneration.Tree>();
+
             for (int i = 0; i < hexes.Length; i++)
             {
                 Hex h = hexes[i];
 
-                if (h.tile.biome == Map.Tile.Biome.humidContinental || h.tile.biome == Map.Tile.Biome.humidSubtropic || h.tile.biome == Map.Tile.Biome.highlands || h.tile.biome == Map.Tile.Biome.subarctic)
+                if (hGen.worldSettings.renderMountains)
                 {
-                    Vector3[] stumpPoints = new Vector3[hGen.worldSettings.treesPerHex];
-
-                    if (h.tile.biome == Map.Tile.Biome.highlands)
+                    #region Peaks Gen
+                    if (h.tile.fault && !h.pent && !h.tile.shore)
                     {
-                        stumpPoints = new Vector3[hGen.worldSettings.treesPerHex / 2];
-                    }
+                        Vector3[] basePoints = new Vector3[h.vertices.Length];
 
-                    for (int stumps = 0; stumps < stumpPoints.Length; stumps++)
-                    {
-                        Vertex r1 = h.vertices[Random.Range(0, h.vertices.Length)];
-                        Vertex r2 = h.vertices[Random.Range(0, h.vertices.Length)];
-
-                        if (r2 == r1)
+                        for (int v = 0; v < h.vertices.Length; v++)
                         {
-                            r2 = h.center;
+                            basePoints[v] = h.vertices[v].pos;
                         }
 
-                        stumpPoints[stumps] = Vector3.Lerp(Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f)), h.center.pos, 0.1f);
+                        ProceduralGeneration.RockStructure newPeak = new ProceduralGeneration.RockStructure(ProceduralGeneration.RockStructure.RockType.peak, hGen.procSettings, h.center.pos, basePoints, hGen.worldSettings.peakHeight);
+                        peaks.Add(newPeak);
                     }
-
-                    Color canopyColor = new Color(0, 0, 0);
-
-                    if (h.tile.biome == Map.Tile.Biome.humidContinental)
+                    #endregion
+                }
+                if (hGen.worldSettings.renderBoulders && Random.Range(1, 101) > hGen.worldSettings.boulderChance)
+                {
+                    #region Boulder Gen
+                    if (h.tile.biome == Map.Tile.Biome.hotSteppe || h.tile.biome == Map.Tile.Biome.prairie || h.tile.biome == Map.Tile.Biome.savanna)
                     {
-                        canopyColor = hGen.worldSettings.continentalForestColor;
+                        for (int boulderPoints = 0; boulderPoints < hGen.worldSettings.bouldersPerHex; boulderPoints++)
+                        {
+                            Vertex r1 = h.vertices[Random.Range(0, h.vertices.Length)];
+                            Vertex r2 = h.vertices[Random.Range(0, h.vertices.Length)];
+
+                            if (r2 == r1)
+                            {
+                                r2 = h.center;
+                            }
+
+                            Vector3 boulderCenter = Vector3.Lerp(Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f)), h.center.pos, 0.1f);
+                            ProceduralGeneration.RockStructure newBoulder = new ProceduralGeneration.RockStructure(ProceduralGeneration.RockStructure.RockType.boulder, hGen.procSettings, boulderCenter);
+                            boulders.Add(newBoulder);
+                        }
                     }
-                    else if (h.tile.biome == Map.Tile.Biome.humidSubtropic)
+                    #endregion
+                }
+                if (hGen.worldSettings.renderTrees)
+                {
+                    #region Tree Gen
+                    if (h.tile.biome == Map.Tile.Biome.humidContinental || h.tile.biome == Map.Tile.Biome.humidSubtropic || h.tile.biome == Map.Tile.Biome.highlands || h.tile.biome == Map.Tile.Biome.subarctic)
                     {
-                        canopyColor = hGen.worldSettings.subtropicForestColor;
-                    }
-                    else if (h.tile.biome == Map.Tile.Biome.subarctic)
-                    {
-                        canopyColor = hGen.worldSettings.subarcticForestColor;
-                    }
-                    else
-                    {
-                        canopyColor = hGen.worldSettings.highlandForestColor;
-                    }
+                        int stumpPoints = hGen.worldSettings.pineTreesPerHex;
 
-                    for (int ind = 0; ind < stumpPoints.Length; ind++)
-                    {
-                        Vector3 stump = stumpPoints[ind];
+                        if (h.tile.biome == Map.Tile.Biome.highlands)
+                        {
+                            stumpPoints = hGen.worldSettings.pineTreesPerHex / 2;
+                        }
 
-                        // Each tree will be made up of a base cube...
-                        // and three pyramids sitting on top of one another.
-                        // Cube: 8 verts, 12 triangles.
-                        // Pyramid: 5 verts, 6 triangles.
-                        // Together: 11 verts, 18 triangles.
-
-                        Procedural.ProceduralGeneration.Tree newTree = new Procedural.ProceduralGeneration.Tree(hGen.procSettings, stump, Procedural.ProceduralGeneration.Tree.TreeType.pine, canopyColor);
+                        Color canopyColor;
 
                         if (h.tile.biome == Map.Tile.Biome.humidContinental)
                         {
-                            continentalPines.Add(newTree);
+                            canopyColor = hGen.worldSettings.continentalForestColor;
                         }
                         else if (h.tile.biome == Map.Tile.Biome.humidSubtropic)
                         {
-                            subtropicPines.Add(newTree);
+                            canopyColor = hGen.worldSettings.subtropicForestColor;
                         }
                         else if (h.tile.biome == Map.Tile.Biome.subarctic)
                         {
-                            subarcticPines.Add(newTree);
+                            canopyColor = hGen.worldSettings.subarcticForestColor;
                         }
                         else
                         {
-                            highlandPines.Add(newTree);
+                            canopyColor = hGen.worldSettings.highlandForestColor;
+                        }
+
+                        for (int stumps = 0; stumps < stumpPoints; stumps++)
+                        {
+                            Vertex r1 = h.vertices[Random.Range(0, h.vertices.Length)];
+                            Vertex r2 = h.vertices[Random.Range(0, h.vertices.Length)];
+
+                            if (r2 == r1)
+                            {
+                                r2 = h.center;
+                            }
+
+                            Vector3 stumpCenter = Vector3.Lerp(Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f)), h.center.pos, 0.1f);
+                            Procedural.ProceduralGeneration.Tree newTree = new Procedural.ProceduralGeneration.Tree(hGen.procSettings, stumpCenter, Procedural.ProceduralGeneration.Tree.TreeType.pine, canopyColor);
+
+                            if (h.tile.biome == Map.Tile.Biome.humidContinental)
+                            {
+                                continentalPines.Add(newTree);
+                            }
+                            else if (h.tile.biome == Map.Tile.Biome.humidSubtropic)
+                            {
+                                subtropicPines.Add(newTree);
+                            }
+                            else if (h.tile.biome == Map.Tile.Biome.subarctic)
+                            {
+                                subarcticPines.Add(newTree);
+                            }
+                            else
+                            {
+                                highlandPines.Add(newTree);
+                            }
                         }
                     }
+                    else if (h.tile.biome == Map.Tile.Biome.tropicalMonsoon || h.tile.biome == Map.Tile.Biome.tropicalRainforest || h.tile.biome == Map.Tile.Biome.savanna)
+                    {
+                        int stumpPoints = hGen.worldSettings.tropicalTreesPerHex;
+
+                        if (h.tile.biome == Map.Tile.Biome.savanna)
+                        {
+                            stumpPoints = hGen.worldSettings.tropicalTreesPerHex / 5;
+                        }
+
+                        Color canopyColor;
+
+                        if (h.tile.biome == Map.Tile.Biome.tropicalMonsoon)
+                        {
+                            canopyColor = hGen.worldSettings.monsoonForestColor;
+                        }
+                        else if (h.tile.biome == Map.Tile.Biome.tropicalRainforest)
+                        {
+                            canopyColor = hGen.worldSettings.tropicalForestColor;
+                        }
+                        else
+                        {
+                            canopyColor = hGen.worldSettings.savannaForestColor;
+                        }
+
+                        for (int stumps = 0; stumps < stumpPoints; stumps++)
+                        {
+                            Vertex r1 = h.vertices[Random.Range(0, h.vertices.Length)];
+                            Vertex r2 = h.vertices[Random.Range(0, h.vertices.Length)];
+
+                            if (r2 == r1)
+                            {
+                                r2 = h.center;
+                            }
+
+                            Vector3 newStump = Vector3.Lerp(Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f)), h.center.pos, 0.1f);
+                            Procedural.ProceduralGeneration.Tree newTree = new Procedural.ProceduralGeneration.Tree(hGen.procSettings, newStump, Procedural.ProceduralGeneration.Tree.TreeType.tropical, canopyColor);
+
+                            if (h.tile.biome == Map.Tile.Biome.tropicalMonsoon)
+                            {
+                                monsoonTrees.Add(newTree);
+                            }
+                            else if (h.tile.biome == Map.Tile.Biome.tropicalRainforest)
+                            {
+                                tropicalTrees.Add(newTree);
+                            }
+                            else
+                            {
+                                savannaTrees.Add(newTree);
+                            }
+                        }
+                    }
+                    else if (h.tile.biome == Map.Tile.Biome.mediterranean && Random.Range(1, 101) > hGen.worldSettings.coastalTreeChance || h.tile.biome == Map.Tile.Biome.prairie && Random.Range(1, 101) > hGen.worldSettings.coastalTreeChance)
+                    {
+                        int stumpPoints = hGen.worldSettings.coastalTreesPerHex;
+
+                        //if (h.tile.biome == Map.Tile.Biome.prairie)
+                        //{
+                        //    stumpPoints = hGen.worldSettings.coastalTreesPerHex / 2;
+                        //}
+
+                        Color canopyColor;
+
+                        if (h.tile.biome == Map.Tile.Biome.mediterranean)
+                        {
+                            canopyColor = hGen.worldSettings.mediterraneanForestColor;
+                        }
+                        else
+                        {
+                            canopyColor = hGen.worldSettings.prairieForestColor;
+                        }
+
+                        for (int stumps = 0; stumps < stumpPoints; stumps++)
+                        {
+                            Vertex r1 = h.vertices[Random.Range(0, h.vertices.Length)];
+                            Vertex r2 = h.vertices[Random.Range(0, h.vertices.Length)];
+
+                            if (r2 == r1)
+                            {
+                                r2 = h.center;
+                            }
+
+                            Vector3 newStump = Vector3.Lerp(Vector3.Lerp(r1.pos, r2.pos, Random.Range(0.01f, 0.99f)), h.center.pos, 0.1f);
+                            Procedural.ProceduralGeneration.Tree newTree = new Procedural.ProceduralGeneration.Tree(hGen.procSettings, newStump, Procedural.ProceduralGeneration.Tree.TreeType.coastal, canopyColor);
+
+                            if (h.tile.biome == Map.Tile.Biome.mediterranean)
+                            {
+                                mediterraneanTrees.Add(newTree);
+                            }
+                            else if (h.tile.biome == Map.Tile.Biome.prairie)
+                            {
+                                tropicalTrees.Add(newTree);
+                            }
+                            else
+                            {
+                                prairieTrees.Add(newTree);
+                            }
+                        }
+                    }
+                    #endregion
                 }
             }
 
+            #region Peak Container Gen
+            if (peaks.Count > 0)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(peaks);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.mountainColor);
+            }
+            #endregion
+
+            #region Boulder Container Gen
+            if (boulders.Count > 0)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(boulders);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.boulderColor);
+            }
+            #endregion
+
+            #region Tree Container Gen
+
+            #region Continental Forests
             if (continentalPines.Count > 0 && continentalPines.Count < 1000)
             {
                 GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
@@ -626,6 +787,9 @@ namespace DeadReckoning.WorldGeneration
                     g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.continentalForestColor);
                 }
             }
+            #endregion
+
+            #region Subtropic Forests
             if (subtropicPines.Count > 0 && subtropicPines.Count < 1000)
             {
                 GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
@@ -643,6 +807,9 @@ namespace DeadReckoning.WorldGeneration
                     g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subtropicForestColor);
                 }
             }
+            #endregion
+
+            #region Subarctic Forests
             if (subarcticPines.Count > 0 && subarcticPines.Count < 1000)
             {
                 GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
@@ -660,6 +827,9 @@ namespace DeadReckoning.WorldGeneration
                     g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.subarcticForestColor);
                 }
             }
+            #endregion
+
+            #region Highland Forests
             if (highlandPines.Count > 0 && highlandPines.Count < 1000)
             {
                 GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
@@ -677,36 +847,108 @@ namespace DeadReckoning.WorldGeneration
                     g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.highlandForestColor);
                 }
             }
+            #endregion
 
-        }
-        public void SpawnPeaks(HexSphereGenerator hGen)
-        {
-            List<ProceduralGeneration.RockStructure> peaks = new List<ProceduralGeneration.RockStructure>();
-
-            for (int i = 0; i < hexes.Length; i++)
-            {
-                Hex h = hexes[i];
-
-                if (h.tile.fault && !h.pent)
-                {
-                    Vector3[] basePoints = new Vector3[h.vertices.Length];
-
-                    for (int v = 0; v < h.vertices.Length; v++)
-                    {
-                        basePoints[v] = h.vertices[v].pos;
-                    }
-
-                    ProceduralGeneration.RockStructure newPeak = new ProceduralGeneration.RockStructure(h.center.pos, basePoints, hGen.worldSettings.peakHeight);
-                    peaks.Add(newPeak);
-                }
-            }
-
-            if (peaks.Count > 0)
+            #region Monsoon Forests
+            if (monsoonTrees.Count > 0 && monsoonTrees.Count < 1000)
             {
                 GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
-                g.GetComponent<Map.ProceduralContainer>().MapObjects(peaks);
-                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.mountainColor);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(monsoonTrees);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.monsoonForestColor);
             }
+            else
+            {
+                for (int i = 0; i < monsoonTrees.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, monsoonTrees.Count - i);
+
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(monsoonTrees.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.monsoonForestColor);
+                }
+            }
+            #endregion
+
+            #region Tropical Rainforests
+            if (tropicalTrees.Count > 0 && tropicalTrees.Count < 1000)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(tropicalTrees);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.tropicalForestColor);
+            }
+            else
+            {
+                for (int i = 0; i < tropicalTrees.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, tropicalTrees.Count - i);
+
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(tropicalTrees.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.tropicalForestColor);
+                }
+            }
+            #endregion
+
+            #region Savanna Forests
+            if (savannaTrees.Count > 0 && savannaTrees.Count < 1000)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(savannaTrees);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.savannaForestColor);
+            }
+            else
+            {
+                for (int i = 0; i < savannaTrees.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, savannaTrees.Count - i);
+
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(savannaTrees.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.savannaForestColor);
+                }
+            }
+            #endregion
+
+            #region Mediterranean Forests
+            if (mediterraneanTrees.Count > 0 && mediterraneanTrees.Count < 1000)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(mediterraneanTrees);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.mediterraneanForestColor);
+            }
+            else
+            {
+                for (int i = 0; i < mediterraneanTrees.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, mediterraneanTrees.Count - i);
+
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(mediterraneanTrees.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.mediterraneanForestColor);
+                }
+            }
+            #endregion
+
+            #region Prairie Forests
+            if (prairieTrees.Count > 0 && prairieTrees.Count < 1000)
+            {
+                GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                g.GetComponent<Map.ProceduralContainer>().MapObjects(prairieTrees);
+                g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.prairieForestColor);
+            }
+            else
+            {
+                for (int i = 0; i < prairieTrees.Count; i += 999)
+                {
+                    int takeAmount = Mathf.Min(999, prairieTrees.Count - i);
+
+                    GameObject g = Instantiate(proceduralPrefab, this.transform.position, Quaternion.identity, this.transform);
+                    g.GetComponent<Map.ProceduralContainer>().MapObjects(prairieTrees.Skip(i).Take(takeAmount).ToList());
+                    g.GetComponent<MeshRenderer>().material.SetColor("Color_1E143C74", hGen.worldSettings.prairieForestColor);
+                }
+            }
+            #endregion
+            #endregion
         }
         public void SpawnGrass(HexSphereGenerator hGen)
         {

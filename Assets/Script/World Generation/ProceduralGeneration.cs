@@ -18,6 +18,21 @@ namespace DeadReckoning.Procedural
         public float pineHeightVariation = 0.05f;
         public float pineWidthtVariation = 0.05f;
 
+        public float tropicalTrunkWidth = 0.25f;
+        public float tropicalTrunkHeight = 0.5f;
+        public int tropicalCanopySize = 3;
+        public float tropicalCanopyThickness = 0.2f;
+        public float tropicalWidthtVariation = 0.05f;
+        public float tropicalHeightVariation = 0.05f;
+
+        public float coastalTrunkWidth = 0.25f;
+        public float coastalTrunkHeight = 0.5f;
+        public float coastalCanopyHeight = 0.5f;
+        public float coastalCanopyThickness = 0.2f;
+        public float coastalWidthVariation = 0.05f;
+        public float coastalHeightVariation = 0.05f;
+
+        public float boulderWidth;
     }
 
     public class ProceduralGeneration
@@ -73,13 +88,21 @@ namespace DeadReckoning.Procedural
 
         public class Tree : ProceduralObject
         {
-            public enum TreeType { pine, oak, cathedralFig }
+            public enum TreeType { pine, tropical, coastal }
 
             public Tree (ProceduralSettings settings, Vector3 stumpBase, TreeType type, Color canopyColor)
             {
                 if (type == TreeType.pine)
                 {
                     GeneratePine(settings, stumpBase, canopyColor);
+                }
+                else if (type == TreeType.tropical)
+                {
+                    GenerateTropical(settings, stumpBase, canopyColor);
+                }
+                else if (type == TreeType.coastal)
+                {
+                    GenerateCoastal(settings, stumpBase, canopyColor);
                 }
             }
 
@@ -102,8 +125,8 @@ namespace DeadReckoning.Procedural
 
                 float trunkWidth = settings.pineTrunkWidth;
                 float trunkHeight = settings.pineTrunkHeight;
-                float layerWidth = settings.pineLayerWidth; // * widthVariance;
-                float layerHeight = settings.pineLayerHeight; // * heightVariance;
+                float layerWidth = settings.pineLayerWidth * widthVariance;
+                float layerHeight = settings.pineLayerHeight * heightVariance;
                 float reducRate = settings.pineLayerReductionRate;
 
                 vertices = new Vector3[]
@@ -148,17 +171,17 @@ namespace DeadReckoning.Procedural
                     0, 1, 2, // Base of trunk
                     2, 1, 3,
 
-                    1, 5, 0, // First trunk side
-                    0, 5, 4,
+                    1, 0, 5, // First trunk side
+                    0, 4, 5,
 
-                    3, 7, 1, // Second trunk side
-                    1, 7, 5,
+                    3, 1, 7, // Second trunk side
+                    1, 5, 7, 
 
-                    3, 2, 7, // Third trunk side
-                    7, 2, 6,
+                    3, 7, 2, // Third trunk side
+                    7, 6, 2, 
 
-                    2, 0, 6, // Fourth trunk side
-                    6, 0, 4,
+                    2, 6, 0, // Fourth trunk side
+                    6, 4, 0,
 
                     4, 5, 6, // Top of trunk
                     6, 5, 7,
@@ -200,6 +223,188 @@ namespace DeadReckoning.Procedural
                 }
             }
 
+            public void GenerateTropical(ProceduralSettings settings, Vector3 stumpBase, Color canopyColor)
+            {
+                Vector3[] relativeAxes = FindRelativeAxes(stumpBase);
+
+                Vector3 forward = relativeAxes[0];
+                Vector3 up = relativeAxes[1];
+                Vector3 right = relativeAxes[2];
+
+                float widthVariance = UnityEngine.Random.Range(1, 1 + settings.tropicalWidthtVariation);
+                float heightVariance = UnityEngine.Random.Range(1, 1 + settings.tropicalHeightVariation);
+
+                float trunkWidth = settings.tropicalTrunkWidth * widthVariance;
+                float trunkHeight = settings.tropicalTrunkHeight * heightVariance;
+                int canopySize = settings.tropicalCanopySize;
+                float canopyThickness = settings.tropicalCanopyThickness;
+
+
+                List<Vector3> treeVerts = new Vector3[]
+                {
+                    // Trunk Base
+                    stumpBase + RelativeMovement(tropicalVertices[0], trunkWidth, trunkWidth, 1, forward, up, right), // A
+                    stumpBase + RelativeMovement(tropicalVertices[1], trunkWidth, trunkWidth, 1, forward, up, right), // B
+                    stumpBase + RelativeMovement(tropicalVertices[2], trunkWidth, trunkWidth, 1, forward, up, right), // C
+                    stumpBase + RelativeMovement(tropicalVertices[3], trunkWidth, trunkWidth, 1, forward, up, right), // D
+
+                    // Trunk Top
+                    stumpBase + RelativeMovement(tropicalVertices[4], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // A
+                    stumpBase + RelativeMovement(tropicalVertices[5], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // B
+                    stumpBase + RelativeMovement(tropicalVertices[6], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // C
+                    stumpBase + RelativeMovement(tropicalVertices[7], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // Dw
+                }.ToList();
+
+                List<int> treeTriangles = new int[]
+                {
+                    0, 1, 2, // Base of trunk
+                    2, 1, 3,
+
+                    1, 0, 5, // Old: 1, 5, 0, // First trunk side
+                    0, 4, 5, // 0, 5, 4,
+
+                    3, 1, 7, // Old: 3, 7, 1, // Second trunk side
+                    1, 5, 7, // 1, 7, 5,
+
+                    3, 7, 2, // Old: 3, 2, 7, // Third trunk side
+                    7, 6, 2, // 7, 2, 6,
+
+                    2, 6, 0, // Old: 2, 0, 6, // Fourth trunk side
+                    6, 4, 0, // 6, 0, 4,
+
+                    4, 5, 6, // Top of trunk
+                    6, 5, 7
+                }.ToList();
+
+                List<Color> treeColors = new List<Color>();
+
+                for (int i = 0; i < treeVerts.Count; i++)
+                {
+                    treeColors.Add(Color.Lerp(Color.green, Color.red, 0.5f));
+                }
+
+                Vector3 trunkTop = stumpBase + (stumpBase.normalized * trunkHeight);
+
+                for (int i = 0; i < canopySize; i++)
+                {
+                    Vector3 bulgeCenter = trunkTop + (Random.insideUnitSphere * canopyThickness);
+
+                    for (int j = 0; j < icoTris.Length; j++)
+                    {
+                        treeTriangles.Add(treeVerts.Count + icoTris[j]);
+                    }
+
+                    for (int j = 0; j < icoVerts.Length; j++)
+                    {
+                        treeVerts.Add(bulgeCenter + RelativeMovement(icoVerts[j], canopyThickness, canopyThickness, canopyThickness, forward, up, right));
+                    }
+                }
+
+                for (int j = icoVerts.Length; j < treeVerts.Count; j++)
+                {
+                    treeColors.Add(canopyColor);
+                }
+
+                colors = treeColors.ToArray();
+                vertices = treeVerts.ToArray();
+                triangles = treeTriangles.ToArray();
+            }
+
+            public void GenerateCoastal(ProceduralSettings settings, Vector3 stumpBase, Color canopyColor)
+            {
+                Vector3[] relativeAxes = FindRelativeAxes(stumpBase);
+
+                Vector3 forward = relativeAxes[0];
+                Vector3 up = relativeAxes[1];
+                Vector3 right = relativeAxes[2];
+
+                float widthVariance = UnityEngine.Random.Range(1, 1 + settings.coastalWidthVariation);
+                float heightVariance = UnityEngine.Random.Range(1, 1 + settings.coastalHeightVariation);
+
+                float trunkWidth = settings.coastalTrunkWidth * widthVariance;
+                float trunkHeight = settings.coastalTrunkHeight * heightVariance;
+                float canopyThickness = settings.coastalCanopyThickness;
+                float canopyHeight = settings.coastalCanopyHeight;
+
+
+                List<Vector3> treeVerts = new Vector3[]
+                {
+                    // Trunk Base
+                    stumpBase + RelativeMovement(tropicalVertices[0], trunkWidth, trunkWidth, 1, forward, up, right), // A
+                    stumpBase + RelativeMovement(tropicalVertices[1], trunkWidth, trunkWidth, 1, forward, up, right), // B
+                    stumpBase + RelativeMovement(tropicalVertices[2], trunkWidth, trunkWidth, 1, forward, up, right), // C
+                    stumpBase + RelativeMovement(tropicalVertices[3], trunkWidth, trunkWidth, 1, forward, up, right), // D
+
+                    // Trunk Top
+                    stumpBase + RelativeMovement(tropicalVertices[4], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // A
+                    stumpBase + RelativeMovement(tropicalVertices[5], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // B
+                    stumpBase + RelativeMovement(tropicalVertices[6], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // C
+                    stumpBase + RelativeMovement(tropicalVertices[7], trunkWidth, trunkWidth, trunkHeight, forward, up, right), // Dw
+                }.ToList();
+
+                List<int> treeTriangles = new int[]
+                {
+                    0, 1, 2, // Base of trunk
+                    2, 1, 3,
+
+                    1, 0, 5, // Old: 1, 5, 0, // First trunk side
+                    0, 4, 5, // 0, 5, 4,
+
+                    3, 1, 7, // Old: 3, 7, 1, // Second trunk side
+                    1, 5, 7, // 1, 7, 5,
+
+                    3, 7, 2, // Old: 3, 2, 7, // Third trunk side
+                    7, 6, 2, // 7, 2, 6,
+
+                    2, 6, 0, // Old: 2, 0, 6, // Fourth trunk side
+                    6, 4, 0, // 6, 0, 4,
+
+                    4, 5, 6, // Top of trunk
+                    6, 5, 7
+                }.ToList();
+
+                List<Color> treeColors = new List<Color>();
+
+                for (int i = 0; i < treeVerts.Count; i++)
+                {
+                    treeColors.Add(Color.Lerp(Color.green, Color.red, 0.5f));
+                }
+
+                Vector3 trunkTop = stumpBase + (stumpBase.normalized * trunkHeight);
+
+                for (int j = 0; j < icoTris.Length; j++)
+                {
+                    treeTriangles.Add(treeVerts.Count + icoTris[j]);
+                }
+
+                for (int j = 0; j < icoVerts.Length; j++)
+                {
+                    treeVerts.Add(trunkTop + RelativeMovement(icoVerts[j], canopyThickness, canopyThickness, canopyHeight, forward, up, right));
+                }
+
+                for (int j = icoVerts.Length; j < treeVerts.Count; j++)
+                {
+                    treeColors.Add(canopyColor);
+                }
+
+                colors = treeColors.ToArray();
+                vertices = treeVerts.ToArray();
+                triangles = treeTriangles.ToArray();
+            }
+
+            public static Vector3[] tropicalVertices = new Vector3[]
+            {
+                new Vector3(-0.5f, -0.5f, 0f), // Base of trunk.
+                new Vector3(-0.5f, 0.5f, 0f),
+                new Vector3(0.5f, -0.5f, 0f),
+                new Vector3(0.5f, 0.5f, 0f),
+
+                new Vector3(-0.5f, -0.5f, 1f), // Top of trunk.
+                new Vector3(-0.5f, 0.5f, 1f),
+                new Vector3(0.5f, -0.5f, 1f),
+                new Vector3(0.5f, -0.5f, 1f)
+            };
+
             public static Vector3[] pineVertices = new Vector3[]
             {
                 new Vector3(-0.5f, -0.5f, 0f), // Base of trunk.
@@ -234,7 +439,59 @@ namespace DeadReckoning.Procedural
 
         public class RockStructure : ProceduralObject
         {
-            public RockStructure(Vector3 center, Vector3[] basePoints, float height)
+            public enum RockType { boulder, peak }
+
+            public RockStructure(RockType rockType, ProceduralSettings settings, Vector3 center, Vector3[] basePoints, float height)
+            {
+                if (rockType == RockType.peak)
+                {
+                    GeneratePeak(center, basePoints, height);
+                }
+                else if (rockType == RockType.boulder)
+                {
+                    GenerateBoulder(settings, center);
+                }
+            }
+
+            public RockStructure(RockType rockType, ProceduralSettings settings, Vector3 center)
+            {
+                if (rockType == RockType.boulder)
+                {
+                    GenerateBoulder(settings, center);
+                }
+            }
+
+            public void GenerateBoulder(ProceduralSettings settings, Vector3 center)
+            {
+                Vector3[] relativeAxes = FindRelativeAxes(center);
+
+                Vector3 forward = relativeAxes[0];
+                Vector3 up = relativeAxes[1];
+                Vector3 right = relativeAxes[2];
+
+                List<Vector3> rockVects = new List<Vector3>();
+                List<int> rockTris = new List<int>(icoTris);
+
+                List<Vector2> uvs = new List<Vector2>();
+
+                for (int j = 0; j < icoVerts.Length; j++)
+                {
+                    rockVects.Add(center + RelativeMovement(icoVerts[j], settings.boulderWidth, settings.boulderWidth, settings.boulderWidth, forward, up, right));
+                }
+
+                for (int i = 0; i < icoVerts.Length; i++)
+                {
+                    float r = Random.Range(0, 1f);
+
+                    uvs.Add(new Vector2(r, 0));
+                }
+
+                uv3 = uvs.ToArray();
+                vertices = rockVects.ToArray();
+                triangles = rockTris.ToArray();
+            }
+
+            public void GeneratePeak(Vector3 center, Vector3[] basePoints, float height) 
             {
                 // We take the set of base points, create a ton of points between them, triangulate those points, then inflate them up along the y-axis...
                 // depending on how close they are to the center, in order to make an irregular peak-like shape.
@@ -383,17 +640,90 @@ namespace DeadReckoning.Procedural
                 {
                     if (i != verts.IndexOf(vAP))
                     {
-                        uvs.Add(new Vector2(Random.Range(0,2), 0));
+                        uvs.Add(new Vector2(Random.Range(0,1f), 0));
                     }
                     else
                     {
-                        uvs.Add(new Vector2(1, 0));
+                        uvs.Add(new Vector2(1f, 0));
                     }
                 }
 
                 uv3 = uvs.ToArray();
             }
         }
+
+        #region Icosahedron Data
+
+        static float t = 100.0f;
+        static float r = t * 0.89441592209664961889545770584312f;
+        static float q = 0.447215f;
+
+        public static Vector3[] icoVerts = new Vector3[] // 12
+        {
+        new Vector3 (0,
+            t,
+            0),
+        new Vector3 (r * Mathf.Cos(0),
+            t * q,
+            r * Mathf.Sin(0)),
+        new Vector3 (r * Mathf.Cos(Mathf.Deg2Rad*72),
+            t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * 72)),
+        new Vector3 (r * Mathf.Cos(Mathf.Deg2Rad * 72 * 2),
+            t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * 72 * 2)),
+        new Vector3 (r * Mathf.Cos(Mathf.Deg2Rad * 72 * 3),
+            t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * 72 * 3)),
+        new Vector3(r * Mathf.Cos(Mathf.Deg2Rad * 72 * 4),
+            t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * 72 * 4)),
+
+        new Vector3 (r * Mathf.Cos(Mathf.Deg2Rad * 36),
+            -t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * 36)),
+        new Vector3(r * Mathf.Cos(Mathf.Deg2Rad * 108),
+            -t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * 108)),
+        new Vector3(r * Mathf.Cos(Mathf.Deg2Rad * (72 * 2 + 36)),
+            -t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * (72 * 2 + 36))),
+        new Vector3 (r * Mathf.Cos(Mathf.Deg2Rad * (72 * 3 + 36)),
+            -t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * (72 * 3 + 36))),
+        new Vector3(r * Mathf.Cos(Mathf.Deg2Rad * (72 * 4 + 36)),
+            -t * q,
+            r * Mathf.Sin(Mathf.Deg2Rad * (72 * 4 + 36))),
+
+        new Vector3 (0, -t, 0)
+        };
+
+        public static int[] icoTris = new int[] { // 60
+        0,2,1,  // 1
+        0,3,2,
+        0,4,3,
+        0,5,4,
+        0,1,5,
+
+        1,2,6, // 6
+        2,7,6,
+        2,3,7,
+        3,8,7,
+        3,4,8,
+        4,9,8,
+        4,5,9,
+        5,10,9,
+        5,1,10,
+        1,6,10,
+
+        11,6,7, // 16
+        11,7,8,
+        11,8,9,
+        11,9,10,
+        11,10,6 // 20
+        };
+
+        #endregion
 
         #region Triangulation
         public static List<ProcTriangle> DelaunayTriangulationMethod(List<Vector3> sites)
