@@ -24,4 +24,21 @@ public class Pixelization : MonoBehaviour
             imageObject.SetActive(true);
         }
     }
+
+
+    public List<GameObject> buttons;
+    public void HideButtons()
+    {
+        foreach (GameObject g in buttons)
+        {
+            if (g.activeInHierarchy)
+            {
+                g.SetActive(false);
+            }
+            else
+            {
+                g.SetActive(true);
+            }
+        }
+    }
 }
