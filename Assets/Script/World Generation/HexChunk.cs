@@ -24,7 +24,10 @@ namespace DeadReckoning.WorldGeneration
         public Triangle origin;
 
         public GameObject proceduralPrefab;
+        public GameObject structureClusterPrefab;
         public GameObject grassPrefab;
+
+        public List<GameObject> structureClusters = new List<GameObject>();
 
         #region Hidden Variables
         [HideInInspector]
@@ -950,6 +953,36 @@ namespace DeadReckoning.WorldGeneration
             #endregion
             #endregion
         }
+
+        public void AddBuilding(ProceduralGeneration.Building newBuilding)
+        {
+            // Structures are going to be rendered per chunk on a "cluster" basis.
+            // That means that rather than having each structure be its own object,
+            // which could get slow once we have lots of structures, we'll have...
+            // nearby structures get rendered together.
+            // Let's just say 100 structures per structure chunk.
+
+            GameObject viableCluster = null;
+
+            foreach (GameObject g in structureClusters)
+            {
+                if (g.GetComponent<Map.StructureCluster>().triCount + (newBuilding.triangles.Length / 3) < 1000)
+                {
+                    viableCluster = g;
+                    break;
+                }
+            }
+
+            if (viableCluster == null)
+            {
+                GameObject newCluster = Instantiate(structureClusterPrefab, this.transform.position, Quaternion.identity, this.transform);
+                structureClusters.Add(newCluster);
+                viableCluster = newCluster;
+            }
+
+            viableCluster.GetComponent<Map.StructureCluster>().AddBuilding(newBuilding);
+        }
+
         public void SpawnGrass(HexSphereGenerator hGen)
         {
             // We want to create mesh objects to hold the grass terrain...

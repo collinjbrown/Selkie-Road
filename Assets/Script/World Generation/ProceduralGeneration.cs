@@ -33,6 +33,8 @@ namespace DeadReckoning.Procedural
         public float coastalHeightVariation = 0.05f;
 
         public float boulderWidth;
+
+        public float hutSize = 0.05f;
     }
 
     public class ProceduralGeneration
@@ -651,6 +653,80 @@ namespace DeadReckoning.Procedural
                 uv3 = uvs.ToArray();
             }
         }
+
+        public class Building : ProceduralObject
+        {
+            public enum Type { hut, yurt, castle }
+
+            public Building(ProceduralSettings settings, Type type, Vector3 location)
+            {
+                // Right now we won't bother with various building types...
+                // but later we'll do so.
+
+                GenerateHut(settings, location);
+            }
+
+            void GenerateHut(ProceduralSettings settings, Vector3 loc)
+            {
+                Vector3[] relativeAxes = FindRelativeAxes(loc);
+
+                Vector3 forward = relativeAxes[0];
+                Vector3 up = relativeAxes[1];
+                Vector3 right = relativeAxes[2];
+
+                float hutSize = settings.hutSize;
+
+                vertices = new Vector3[]
+                {
+                    loc + RelativeMovement(cubeVerts[0], hutSize, hutSize, hutSize, forward, up, right),
+                    loc + RelativeMovement(cubeVerts[1], hutSize, hutSize, hutSize, forward, up, right),
+                    loc + RelativeMovement(cubeVerts[2], hutSize, hutSize, hutSize, forward, up, right),
+                    loc + RelativeMovement(cubeVerts[3], hutSize, hutSize, hutSize, forward, up, right),
+                    loc + RelativeMovement(cubeVerts[4], hutSize, hutSize, hutSize, forward, up, right),
+                    loc + RelativeMovement(cubeVerts[5], hutSize, hutSize, hutSize, forward, up, right),
+                    loc + RelativeMovement(cubeVerts[6], hutSize, hutSize, hutSize, forward, up, right),
+                    loc + RelativeMovement(cubeVerts[7], hutSize, hutSize, hutSize, forward, up, right),
+                };
+
+                triangles = cubeTris;
+            }
+        }
+
+        #region Cube Data
+        public static Vector3[] cubeVerts = new Vector3[] // We're assuming (0,0) is at the bottom of the cube, rather than the center.
+        {
+            new Vector3(-0.5f, -0.5f, 0), // A ~ 0
+            new Vector3(-0.5f, 0.5f, 0),  // B ~ 1
+            new Vector3(0.5f, 0.5f, 0),   // C ~ 2
+            new Vector3(0.5f, -0.5f, 0),  // D ~ 3
+
+            new Vector3(-0.5f, -0.5f, 1), // A' ~ 4
+            new Vector3(-0.5f, 0.5f, 1),  // B' ~ 5
+            new Vector3(0.5f, 0.5f, 1),   // C' ~ 6
+            new Vector3(0.5f, -0.5f, 1),  // D' ~ 7
+        };
+
+        public static int[] cubeTris = new int[]
+        {
+            0, 3, 1, // La Cima
+            3, 2, 1,
+
+            1, 0, 5, // Uno
+            0, 4, 5,
+
+            2, 1, 6, // Dos
+            1, 5, 6,
+
+            3, 2, 7, // Tres
+            2, 6, 7,
+
+            0, 3, 4, // Quatro
+            3, 7, 4,
+
+            4, 7, 5, // El Fondo
+            7, 6, 5
+        };
+        #endregion
 
         #region Icosahedron Data
 

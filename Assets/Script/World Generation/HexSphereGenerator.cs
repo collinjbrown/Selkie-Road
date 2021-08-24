@@ -24,6 +24,8 @@ namespace DeadReckoning.WorldGeneration
         public Material chunkMaterial;
         public GameObject planetPrefab;
 
+        public Sim.GeneralManager generalManager;
+
         public NoiseSettings noiseSettings;
         public WorldbuildingSettings worldSettings;
         public ProceduralSettings procSettings;
@@ -209,6 +211,10 @@ namespace DeadReckoning.WorldGeneration
                         c.SpawnObjects(this);
                         c.Render(true);
                     }
+
+                    generalManager.hGen = this;
+                    generalManager.Setup(map.land);
+                    generalManager.PassDay();
                 }
                 else
                 {
@@ -237,6 +243,7 @@ namespace DeadReckoning.WorldGeneration
             }
 
             planetGenerator.isPlanet = true;
+            planetGenerator.generalManager = generalManager;
             planetGenerator.maxContDist = maxContDist;
             planetGenerator.oceanRadius = worldRadius;
 
@@ -463,6 +470,13 @@ namespace DeadReckoning.WorldGeneration
 
         public int x;
         public int y;
+
+        public bool isWalkable = true;
+        public float hCost;
+        public float gCost;
+        public float FCost { get { return gCost + hCost; } }
+        public Hex parentHex;
+        public float movementPenalty;
 
         public bool pent;
 

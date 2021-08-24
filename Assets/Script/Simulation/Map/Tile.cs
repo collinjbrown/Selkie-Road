@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DeadReckoning.WorldGeneration;
 using DeadReckoning.Constructs;
-
+using System.Linq;
 
 namespace DeadReckoning.Map
 {
@@ -120,11 +120,22 @@ namespace DeadReckoning.Map
 
     public class Tile
     {
+        // 1 Tile = 10 KM in diameter
+        // 1 Tile = ~64.95 KM^2 = ~40 mils^2
+        public const int tileArea = 40;
+
+        // Which means max population density should be...
+        // somewhere around ~5000.
+        // Max Pop = area * fertility.
+
         public bool submerged; // Underwater, duh.
         public bool shore; // Edge of landmass.
         public bool fault; // Edge of continent.
         public bool faultAdjacent; // What is says on the tin.
         public bool polarCap;
+
+        public int Fertility { get { return GetFertility(); } }
+        public float PopulationLimit { get { return GetPopulationLimit(); } }
 
         public TileMap map;
         public TectonicPlate plate;
@@ -165,27 +176,58 @@ namespace DeadReckoning.Map
         public enum FlowDirection { none, east, west, north, south }
 
         #region Resources
+        public float GetPopulationLimit()
+        {
+            // Maximum population should essentially be somewhere between abysmally low and 5000.
+            // 5,000 comes from 125 people per square mile times the tile area (~40 square miles).
+            // This (kinda absurdly) high density should only ever occur in really fertile places...
+            // like Mediterranean climates. Average density should fall somewhere closer to the 30 ~ 60 range.
+            // We'll also weight things like heat and precipitation; both through absolute values.
+
+            float maxPop = (Fertility * 2.5f * tileArea) - Mathf.Abs((int)precipitation * 100) - Mathf.Abs((int)temperature * 100);
+
+            if (maxPop < 0)
+            {
+                maxPop = 0;
+            }
+
+            return maxPop;
+        }
+        public int GetFertility()
+        {
+            int total = 0;
+
+            foreach (KeyValuePair<Resource.Type, Resource> r in resources)
+            {
+                if (r.Value.edible)
+                {
+                    total += r.Value.yield;
+                }
+            }
+
+            return total;
+        }
         public void DetermineResources()
         {
             if (precipitation == Gradient.veryLow)
             {
-                AddResources(Resource.Type.water, 0, false, true, false);
+                AddResources(Resource.Type.water, 0, false, false, true, false);
             }
             else if (precipitation == Gradient.low)
             {
-                AddResources(Resource.Type.water, 10, false, true, false);
+                AddResources(Resource.Type.water, 10, false, false, true, false);
             }
             else if (precipitation == Gradient.mid)
             {
-                AddResources(Resource.Type.water, 20, false, true, false);
+                AddResources(Resource.Type.water, 20, false, false, true, false);
             }
             else if (precipitation == Gradient.high)
             {
-                AddResources(Resource.Type.water, 30, false, true, false);
+                AddResources(Resource.Type.water, 30, false, false, true, false);
             }
             else if (precipitation == Gradient.veryHigh)
             {
-                AddResources(Resource.Type.water, 40, false, true, false);
+                AddResources(Resource.Type.water, 40, false, false, true, false);
             }
 
             int dumbLuck = Random.Range(0, 11);
@@ -193,21 +235,21 @@ namespace DeadReckoning.Map
             #region Coasts & Faults
             if (shore)
             {
-                AddResources(Resource.Type.fish, 20, true, false, false);
+                AddResources(Resource.Type.fish, 20, true, true, false, false);
 
                 if (dumbLuck == 10)
                 {
-                    AddResources(Resource.Type.fish, 10, true, false, false);
+                    AddResources(Resource.Type.fish, 10, true, true, false, false);
                 }
             }
 
             if (faultAdjacent)
             {
-                AddResources(Resource.Type.stone, 20, false, false, true);
+                AddResources(Resource.Type.stone, 20, false, false, false, true);
 
                 if (dumbLuck == 10)
                 {
-                    AddResources(Resource.Type.stone, 10, false, false, true);
+                    AddResources(Resource.Type.stone, 10, false, false, false, true);
                 }
             }
             #endregion
@@ -215,132 +257,132 @@ namespace DeadReckoning.Map
             #region Biomes
             if (biome == Biome.tropicalMonsoon)
             {
-                AddResources(Resource.Type.rice, 20, true, false, false);
+                AddResources(Resource.Type.rice, 20, false, true, false, false);
 
                 if (dumbLuck == 10)
                 {
-                    AddResources(Resource.Type.rice, 10, true, false, false);
+                    AddResources(Resource.Type.rice, 10, false, true, false, false);
                 }
             }
             else if (biome == Biome.hotSteppe)
             {
-                AddResources(Resource.Type.barley, 5, true, false, false);
-                AddResources(Resource.Type.goat, 5, true, false, false);
+                AddResources(Resource.Type.barley, 5, false, true, false, false);
+                AddResources(Resource.Type.goat, 5, true, true, false, false);
 
                 if (dumbLuck == 10)
                 {
-                    AddResources(Resource.Type.goat, 10, true, false, false);
+                    AddResources(Resource.Type.goat, 10, true, true, false, false);
                 }
             }
             else if (biome == Biome.savanna)
             {
-                AddResources(Resource.Type.maize, 5, true, false, false);
-                AddResources(Resource.Type.millet, 5, true, false, false);
+                AddResources(Resource.Type.maize, 5, false, true, false, false);
+                AddResources(Resource.Type.millet, 5, false, true, false, false);
 
                 if (dumbLuck >= 9)
                 {
-                    AddResources(Resource.Type.goat, 10, true, false, false);
+                    AddResources(Resource.Type.goat, 10, true, true, false, false);
                 }
             }
             else if (biome == Biome.tropicalRainforest)
             {
-                AddResources(Resource.Type.sugarCane, 5, true, false, false);
-                AddResources(Resource.Type.coffee, 5, true, false, false);
-                AddResources(Resource.Type.banana, 5, true, false, false);
-                AddResources(Resource.Type.chocolate, 5, true, false, false);
+                AddResources(Resource.Type.sugarCane, 5, false, true, false, false);
+                AddResources(Resource.Type.coffee, 5, false, true, false, false);
+                AddResources(Resource.Type.banana, 5, false, true, false, false);
+                AddResources(Resource.Type.chocolate, 5, false, true, false, false);
 
                 if (dumbLuck >= 9)
                 {
-                    AddResources(Resource.Type.pork, 10, true, false, false);
+                    AddResources(Resource.Type.pork, 10, true, true, false, false);
                 }
             }
             else if (biome == Biome.coldDesert)
             {
-                AddResources(Resource.Type.goat, 5, true, false, false);
+                AddResources(Resource.Type.goat, 5, true, true, false, false);
 
                 if (dumbLuck == 10)
                 {
-                    AddResources(Resource.Type.goat, 5, true, false, false);
+                    AddResources(Resource.Type.goat, 5, true, true, false, false);
                 }
             }
             else if (biome == Biome.highlands)
             {
-                AddResources(Resource.Type.sheep, 5, true, false, false);
-                AddResources(Resource.Type.barley, 10, true, false, false);
-                AddResources(Resource.Type.wheat, 5, true, false, false);
+                AddResources(Resource.Type.sheep, 5, true, true, false, false);
+                AddResources(Resource.Type.barley, 10, false, true, false, false);
+                AddResources(Resource.Type.wheat, 5, false, true, false, false);
 
                 if (dumbLuck >= 9)
                 {
-                    AddResources(Resource.Type.goat, 10, true, false, false);
+                    AddResources(Resource.Type.goat, 10, true, true, false, false);
                 }
             }
             else if (biome == Biome.mediterranean)
             {
-                AddResources(Resource.Type.wheat, 20, true, false, false);
-                AddResources(Resource.Type.olives, 10, true, false, false);
-                AddResources(Resource.Type.grapes, 10, true, false, false);
-                AddResources(Resource.Type.beef, 10, true, false, false);
+                AddResources(Resource.Type.wheat, 20, false, true, false, false);
+                AddResources(Resource.Type.olives, 10, false, true, false, false);
+                AddResources(Resource.Type.grapes, 10, false, true, false, false);
+                AddResources(Resource.Type.beef, 10, true, true, false, false);
 
                 if (dumbLuck == 10)
                 {
-                    AddResources(Resource.Type.grapes, 10, true, false, false);
-                    AddResources(Resource.Type.olives, 10, true, false, false);
+                    AddResources(Resource.Type.grapes, 10, false, true, false, false);
+                    AddResources(Resource.Type.olives, 10, false, true, false, false);
                 }
             }
             else if (biome == Biome.humidSubtropic)
             {
-                AddResources(Resource.Type.rice, 10, true, false, false);
-                AddResources(Resource.Type.cotton, 10, true, false, false);
-                AddResources(Resource.Type.maize, 10, true, false, false);
-                AddResources(Resource.Type.tea, 10, false, true, false);
+                AddResources(Resource.Type.rice, 10, false, true, false, false);
+                AddResources(Resource.Type.cotton, 10, false, true, false, false);
+                AddResources(Resource.Type.maize, 10, false, true, false, false);
+                AddResources(Resource.Type.tea, 10, false, false, true, false);
 
                 if (dumbLuck == 10)
                 {
-                    AddResources(Resource.Type.potatoes, 10, true, false, false);
-                    AddResources(Resource.Type.tea, 10, false, true, false);
+                    AddResources(Resource.Type.potatoes, 10, false, true, false, false);
+                    AddResources(Resource.Type.tea, 10, false, false, true, false);
                 }
             }
             else if (biome == Biome.oceanic)
             {
-                AddResources(Resource.Type.potatoes, 10, true, false, false);
-                AddResources(Resource.Type.sheep, 10, true, false, false);
-                AddResources(Resource.Type.beef, 10, true, false, false);
+                AddResources(Resource.Type.potatoes, 10, false, true, false, false);
+                AddResources(Resource.Type.sheep, 10, true, true, false, false);
+                AddResources(Resource.Type.beef, 10, true, true, false, false);
 
                 if (dumbLuck >= 9)
                 {
-                    AddResources(Resource.Type.potatoes, 10, true, false, false);
+                    AddResources(Resource.Type.potatoes, 10, false, true, false, false);
                 }
             }
             else if (biome == Biome.humidContinental)
             {
-                AddResources(Resource.Type.wheat, 10, true, false, false);
-                AddResources(Resource.Type.barley, 10, true, false, false);
-                AddResources(Resource.Type.maize, 5, true, false, false);
-                AddResources(Resource.Type.potatoes, 5, true, false, false);
+                AddResources(Resource.Type.wheat, 10, false, true, false, false);
+                AddResources(Resource.Type.barley, 10, false, true, false, false);
+                AddResources(Resource.Type.maize, 5, false, true, false, false);
+                AddResources(Resource.Type.potatoes, 5, false, true, false, false);
 
                 if (dumbLuck >= 9)
                 {
-                    AddResources(Resource.Type.poultry, 5, true, false, false);
-                    AddResources(Resource.Type.beef, 5, true, false, false);
+                    AddResources(Resource.Type.poultry, 5, true, true, false, false);
+                    AddResources(Resource.Type.beef, 5, true, true, false, false);
                 }
             }
             else if (biome == Biome.subarctic)
             {
-                AddResources(Resource.Type.wheat, 5, true, false, false);
+                AddResources(Resource.Type.wheat, 5, false, true, false, false);
 
                 if (dumbLuck >= 9)
                 {
-                    AddResources(Resource.Type.goat, 5, true, false, false);
+                    AddResources(Resource.Type.goat, 5, true, true, false, false);
                 }
             }
             else if (biome == Biome.prairie)
             {
-                AddResources(Resource.Type.beef, 10, true, false, false);
-                AddResources(Resource.Type.wheat, 20, true, false, false);
+                AddResources(Resource.Type.beef, 10, true, true, false, false);
+                AddResources(Resource.Type.wheat, 20, false, true, false, false);
 
                 if (dumbLuck >= 9)
                 {
-                    AddResources(Resource.Type.poultry, 10, true, false, false);
+                    AddResources(Resource.Type.poultry, 10, true, true, false, false);
                 }
             }
             #endregion
@@ -350,23 +392,23 @@ namespace DeadReckoning.Map
 
             if (dumbLuck >= 98)
             {
-                AddResources(Resource.Type.tin, 10, false, false, true);
+                AddResources(Resource.Type.tin, 10, false, false, false, true);
             }
             else if (dumbLuck >= 94)
             {
-                AddResources(Resource.Type.copper, 20, false, false, true);
+                AddResources(Resource.Type.copper, 20, false, false, false, true);
             }
             else if (dumbLuck >= 90)
             {
-                AddResources(Resource.Type.iron, 20, false, false, true);
+                AddResources(Resource.Type.iron, 20, false, false, false, true);
             }
             #endregion
         }
-        public void AddResources(Resource.Type type, int yield, bool edible, bool drinkable, bool buildable)
+        public void AddResources(Resource.Type type, int yield, bool animal, bool edible, bool drinkable, bool buildable)
         {
             if (!resources.ContainsKey(type))
             {
-                Resource r = new Resource(type, yield, edible, drinkable, buildable);
+                Resource r = new Resource(type, yield, animal, edible, drinkable, buildable);
                 resources.Add(type, r);
             }
             else
@@ -807,6 +849,11 @@ namespace DeadReckoning.Map
                     SetBiome(Biome.coldDesert, true, Gradient.veryLow, true, Gradient.veryLow, Color.blue, false);
                 }
             }
+
+            if (submerged || biome == Biome.mountain)
+            {
+                hex.isWalkable = false;
+            }
         }
         public Gradient EstimateTemperature(HexSphereGenerator hGen)
         {
@@ -952,6 +999,7 @@ namespace DeadReckoning.Map
     public class Resource
     {
         public int yield; // How much of it one gets per turn.
+        public bool animal; // Determines disease and ethics.
         public bool edible; // Can be eaten.
         public bool drinkable; // Can be drunk (drinken sounds better).
         public bool buildable; // Can be used to make structures.
@@ -959,10 +1007,11 @@ namespace DeadReckoning.Map
 
         public enum Type { water, tea, wheat, barley, rice, millet, maize, potatoes, sugarCane, banana, coffee, chocolate, grapes, olives, cotton, pork, poultry, beef, goat, sheep, fish, lumber, tin, iron, copper, stone } // These are just placeholders.
 
-        public Resource(Resource.Type type, int yield, bool edible, bool drinkable, bool buildable)
+        public Resource(Resource.Type type, int yield, bool animal, bool edible, bool drinkable, bool buildable)
         {
             this.type = type;
             this.yield = yield;
+            this.animal = animal;
             this.edible = edible;
             this.drinkable = drinkable;
             this.buildable = buildable;
