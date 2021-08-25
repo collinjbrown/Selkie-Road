@@ -1316,6 +1316,15 @@ namespace DeadReckoning.WorldGeneration
             wallTris = wallTrisList.ToArray();
         }
 
+        public void CullHexes()
+        {
+            for (int i = 0; i < hexes.Length; i++)
+            {
+                Hex h = hexes[i];
+
+                h.neighbors = (from Hex n in h.neighbors where n.tile != null select n).ToList();
+            }
+        }
         #endregion
 
         #region Neighbors & Sorting

@@ -39,7 +39,7 @@ namespace DeadReckoning.Map {
 
                 if (currentHex == target)
                 {
-                    Debug.Log($"Path found between {origin} & {target}.");
+                    // Debug.Log($"Path found between {origin} & {target}.");
                     ClearCosts(openSet, closedSet);
                     return ReconstructPath(origin, target);
                 }

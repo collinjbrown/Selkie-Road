@@ -9,7 +9,7 @@ namespace DeadReckoning.Sim
 {
     public static class PopulationDynamics
     {
-        public const float growthRate = 0.0003f;
+        public const float growthRate = 0.000027f;
         public const int minorMigrationChance = 75;
         public const int majorMigrationChance = 95;
 
@@ -20,10 +20,17 @@ namespace DeadReckoning.Sim
 
             float calculatedGrowth = growthRate * currentPopulation * ((tileCapacity - currentPopulation) / tileCapacity);
 
-            return calculatedGrowth / 100f;
+            // We're going to limit this to true growth rather, as famine, disease, and war should keep population in check.
+            if (calculatedGrowth < 0)
+            {
+                calculatedGrowth = 0;
+            }
+
+            // Debug.Log($"Growth: {calculatedGrowth}");
+            return calculatedGrowth / 100;
         }
 
-        public static float CalculateDailyDeaths()
+        public static float CalculateDailyDeaths(Structure structure)
         {
             // Chances for death by disease will increase with a larger population.
             // Or if there are animals present in large numbers.
@@ -35,7 +42,43 @@ namespace DeadReckoning.Sim
             // but I worry that would just decimate populations in low fertility zones,
             // so we'll probably have famine be a set rate for now.
 
-            return 1f;
+            float deathPercentage = 0;
+
+            #region Disease
+            float populationModifier = structure.Population / 1000f;
+            float livestockModifier = structure.Tile.GetLivestockCount() / 20f;
+            float wetnessModifier = 0;
+
+            if (structure.Tile.precipitation == Tile.Gradient.high)
+            {
+                wetnessModifier += 0.5f;
+            }
+            else if (structure.Tile.precipitation == Tile.Gradient.veryHigh)
+            {
+                wetnessModifier += 1f;
+            }
+
+            float diseaseModifier = populationModifier + livestockModifier + wetnessModifier;
+            deathPercentage += Random.Range(0, diseaseModifier);
+            #endregion
+
+            #region Exposure
+            float temperatureModifier = 0;
+
+            if (structure.Tile.temperature == Tile.Gradient.high || structure.Tile.temperature == Tile.Gradient.low)
+            {
+                temperatureModifier += 0.5f;
+            }
+            else if (structure.Tile.temperature == Tile.Gradient.veryHigh || structure.Tile.temperature == Tile.Gradient.veryLow)
+            {
+                temperatureModifier += 1f;
+            }
+
+            deathPercentage += Random.Range(0, temperatureModifier);
+            #endregion
+
+            // Debug.Log($"Death: {deathPercentage / 100}");
+            return deathPercentage / 10000f;
         }
         #endregion
 
@@ -90,19 +133,22 @@ namespace DeadReckoning.Sim
 
                 Tile bestOption = null;
                 float mostFertility = Mathf.NegativeInfinity;
-
+                
                 foreach (Hex h in potentialDestinations)
                 {
-                    if (h.tile.Fertility > mostFertility)
+                    if (h.tile.Fertility > mostFertility && h.tile.structures.Count == 0 && h.isWalkable)
                     {
                         mostFertility = h.tile.Fertility;
                         bestOption = h.tile;
                     }
                 }
 
-                Structure s = new Structure(bestOption, migrationSize);
-                origin.floatingPopulation -= migrationSize;
-                manager.newStructures.Add(s);
+                if (bestOption != null)
+                {
+                    Structure s = new Structure(bestOption, migrationSize);
+                    origin.floatingPopulation -= migrationSize;
+                    manager.newStructures.Add(s);
+                }
             }
         }
         #endregion

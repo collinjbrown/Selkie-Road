@@ -7,15 +7,14 @@ using DeadReckoning.WorldGeneration;
 
 namespace DeadReckoning.Constructs
 {
-    [System.Serializable]
     public class Structure
     {
         public int Population { get { return Mathf.RoundToInt(floatingPopulation); } }
 
         public float floatingPopulation;
 
-        public void GrowPopulation() { floatingPopulation +=  floatingPopulation * PopulationDynamics.CalculateDailyGrowth(floatingPopulation, Tile); }
-
+        public void GrowPopulation() { floatingPopulation += floatingPopulation * PopulationDynamics.CalculateDailyGrowth(floatingPopulation, Tile); }
+        public void CullPopulation() { floatingPopulation -= floatingPopulation * PopulationDynamics.CalculateDailyDeaths(this); }
 
         public int buildings;
         public int NecessaryBuildings { get { return 1 + (Population / 100); } }
@@ -31,11 +30,42 @@ namespace DeadReckoning.Constructs
         Language Language { get; }
 
         #region Resources
-        public void Reap()
+        public void ReapAndConsume()
         {
             foreach (KeyValuePair<Resource.Type, Resource> r in Tile.resources)
             {
-                stores[r.Value] += r.Value.yield;
+                if (stores.ContainsKey(r.Value))
+                {
+                    // Reap
+                    stores[r.Value] += Mathf.RoundToInt(r.Value.yield * (Population / Tile.PopulationLimit));
+
+                    // Consume
+                    stores[r.Value] -= Mathf.RoundToInt((Population / (Tile.tileArea * 2.5f)) / Tile.Fertility);
+
+                    // Decay
+                    stores[r.Value] -= 1;
+
+                    if (stores[r.Value] < 0)
+                    {
+                        stores[r.Value] = 0;
+                    }
+                }
+                else
+                {
+                    // Reap
+                    stores.Add(r.Value, Mathf.RoundToInt(r.Value.yield * (Population / Tile.PopulationLimit)));
+
+                    // Consume
+                    stores[r.Value] -= Mathf.RoundToInt((Population / (Tile.tileArea * 2.5f)) / Tile.Fertility);
+
+                    // Decay
+                    stores[r.Value] -= 1;
+
+                    if (stores[r.Value] < 0)
+                    {
+                        stores[r.Value] = 0;
+                    }
+                }
             }
         }
         #endregion
@@ -46,6 +76,7 @@ namespace DeadReckoning.Constructs
             pathToNeighbors = new Dictionary<Structure, List<Hex>>();
             stores = new Dictionary<Resource, int>();
 
+            tile.structures.Add(this);
             floatingPopulation = startingPop;
             Tile = tile;
             Government = new Government((Government.Type)Random.Range(0, 3));
@@ -59,6 +90,7 @@ namespace DeadReckoning.Constructs
             pathToNeighbors = new Dictionary<Structure, List<Hex>>();
             stores = new Dictionary<Resource, int>();
 
+            tile.structures.Add(this);
             Tile = tile;
             Government = government;
             Culture = culture;

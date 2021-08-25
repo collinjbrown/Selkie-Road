@@ -207,8 +207,13 @@ namespace DeadReckoning.Map
 
             return total;
         }
+        public int GetLivestockCount()
+        {
+            return (from KeyValuePair<Resource.Type, Resource> r in resources where r.Value.animal select r).ToList().Count;
+        }
         public void DetermineResources()
         {
+            #region Rainwater
             if (precipitation == Gradient.veryLow)
             {
                 AddResources(Resource.Type.water, 0, false, false, true, false);
@@ -229,6 +234,7 @@ namespace DeadReckoning.Map
             {
                 AddResources(Resource.Type.water, 40, false, false, true, false);
             }
+            #endregion
 
             int dumbLuck = Random.Range(0, 11);
 

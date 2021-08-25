@@ -7,6 +7,8 @@ namespace DeadReckoning.Sim
 {
     public class GeneralManager : MonoBehaviour
     {
+        public int year;
+        public int day;
         public int totalPopulation;
         public static int startingStructures = 10;
 
@@ -18,15 +20,36 @@ namespace DeadReckoning.Sim
             // We'll add more here once we have more stuff.
             HistoryManager.PassDay(hGen);
             totalPopulation = HistoryManager.worldPopulation;
+            day = HistoryManager.Day;
+            year = day / 365;
         }
 
         public void PassDays(int days)
         {
             for (int i = 0; i < days; i++)
             {
-                HistoryManager.PassDay(hGen);
+                PassDay();
             }
-            totalPopulation = HistoryManager.worldPopulation;
+        }
+
+        public void TriggerTimelapse(int days)
+        {
+            StartCoroutine(Timelapse(days));
+        }
+
+        IEnumerator Timelapse(int days)
+        {
+            int target = day + days;
+            float rotateTime = 0.0001f;
+
+            while (day < target)
+            {
+                PassDay();
+                hGen.transform.parent.Rotate(0, (360 / (rotateTime * 60 * 60)) * Time.deltaTime, 0, Space.Self);
+                yield return new WaitForSeconds(0.01f);
+            }
+
+            yield return null;
         }
 
         public void Setup(List<Tile> landTiles)

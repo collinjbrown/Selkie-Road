@@ -210,6 +210,8 @@ namespace DeadReckoning.WorldGeneration
                     {
                         c.SpawnObjects(this);
                         c.Render(true);
+
+                        c.CullHexes();
                     }
 
                     generalManager.hGen = this;

@@ -7,7 +7,6 @@ using DeadReckoning.WorldGeneration;
 
 namespace DeadReckoning.Sim
 {
-    [System.Serializable]
     public class HistoryManager
     {
         public int Day { get { return day; } }
@@ -41,8 +40,6 @@ namespace DeadReckoning.Sim
                 }
 
                 structures.Add(s);
-
-                Camera.main.GetComponentInChildren<LineRenderer>().SetPosition(1, s.Tile.hex.center.pos.normalized * 100);
             }
 
             newStructures = new List<Structure>();
@@ -53,9 +50,13 @@ namespace DeadReckoning.Sim
             foreach (Structure s in structures)
             {
                 // Update floating population.
-                // int oldPopulation = s.Population;
+                int oldPopulation = s.Population;
                 s.GrowPopulation();
+                s.CullPopulation();
+
                 copulation += s.Population;
+
+                s.ReapAndConsume();
                 // Debug.Log($"{oldPopulation} --> {s.Population}");
 
                 PopulationDynamics.CalculateMigration(this, s);
