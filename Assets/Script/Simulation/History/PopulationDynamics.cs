@@ -11,7 +11,7 @@ namespace DeadReckoning.Sim
     {
         public const float growthRate = 0.000027f;
         public const int minorMigrationChance = 75;
-        public const int majorMigrationChance = 95;
+        public const int majorMigrationChance = 99;
 
         #region Population
         public static float CalculateDailyGrowth(float currentPopulation, Tile tile)
@@ -83,6 +83,9 @@ namespace DeadReckoning.Sim
         #endregion
 
         #region Migrations
+        // We're going to alter these types of migration.
+        // Instead I want to have a more civ-esque city / settlement foundation system.
+
         public static void CalculateMigration(HistoryManager manager, Structure structure)
         {
             if (Random.Range(0, 101) > minorMigrationChance)
@@ -91,7 +94,7 @@ namespace DeadReckoning.Sim
                 MinorMigration(manager, migrationSize, structure, true);
             }
 
-            if ((structure.Population / structure.Tile.PopulationLimit) > 0.8f && Random.Range(0, 101) > majorMigrationChance)
+            if ((structure.Population / structure.Tile.PopulationLimit) > 0.25f && Random.Range(0, 101) > majorMigrationChance)
             {
                 // Migrate
                 float migrationSize = Random.Range(structure.floatingPopulation * 0.1f, structure.floatingPopulation * 0.3f);

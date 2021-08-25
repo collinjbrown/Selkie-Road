@@ -59,7 +59,7 @@ namespace DeadReckoning.Sim
                 s.ReapAndConsume();
                 // Debug.Log($"{oldPopulation} --> {s.Population}");
 
-                PopulationDynamics.CalculateMigration(this, s);
+                // PopulationDynamics.CalculateMigration(this, s);
 
                 if (s.buildings < s.NecessaryBuildings)
                 {

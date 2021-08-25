@@ -10,7 +10,7 @@ namespace DeadReckoning.Sim
         public int year;
         public int day;
         public int totalPopulation;
-        public static int startingStructures = 10;
+        public int startingStructures = 10;
 
         public HistoryManager HistoryManager;
         public WorldGeneration.HexSphereGenerator hGen;
@@ -40,14 +40,16 @@ namespace DeadReckoning.Sim
         IEnumerator Timelapse(int days)
         {
             int target = day + days;
-            float rotateTime = 0.0001f;
+            // float rotateTime = 0.0001f;
 
             while (day < target)
             {
                 PassDay();
-                hGen.transform.parent.Rotate(0, (360 / (rotateTime * 60 * 60)) * Time.deltaTime, 0, Space.Self);
+                // hGen.transform.parent.Rotate(0, (360 / (rotateTime * 60 * 60)) * Time.deltaTime, 0, Space.Self);
                 yield return new WaitForSeconds(0.01f);
             }
+
+            // hGen.transform.rotation = Quaternion.identity;
 
             yield return null;
         }
