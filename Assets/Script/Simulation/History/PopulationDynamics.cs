@@ -83,76 +83,9 @@ namespace DeadReckoning.Sim
         #endregion
 
         #region Migrations
-        // We're going to alter these types of migration.
-        // Instead I want to have a more civ-esque city / settlement foundation system.
-
-        public static void CalculateMigration(HistoryManager manager, Structure structure)
+        public static void CalculateMigration(Structure structure)
         {
-            if (Random.Range(0, 101) > minorMigrationChance)
-            {
-                float migrationSize = Random.Range(structure.floatingPopulation * 0.05f, structure.floatingPopulation * 0.1f);
-                MinorMigration(manager, migrationSize, structure, true);
-            }
-
-            if ((structure.Population / structure.Tile.PopulationLimit) > 0.25f && Random.Range(0, 101) > majorMigrationChance)
-            {
-                // Migrate
-                float migrationSize = Random.Range(structure.floatingPopulation * 0.1f, structure.floatingPopulation * 0.3f);
-                MajorMigration(manager, migrationSize, structure, true);
-            }
-        }
-
-        public static void MinorMigration(HistoryManager manager, float migrationSize, Structure origin, bool byLand)
-        {
-            if (byLand)
-            {
-                Structure bestNeighbor = null;
-                float bestValue = Mathf.NegativeInfinity;
-
-                foreach (KeyValuePair<Structure, List<Hex>> neighbors in origin.pathToNeighbors)
-                {
-                    if (neighbors.Value.Count > 0 && neighbors.Key.Tile.PopulationLimit - neighbors.Key.Population > bestValue)
-                    {
-                        bestNeighbor = neighbors.Key;
-                        bestValue = neighbors.Key.Tile.PopulationLimit - neighbors.Key.Population;
-                    }
-                }
-
-                if (bestNeighbor != null)
-                {
-                    Debug.Log($"A host of {Mathf.RoundToInt(migrationSize)} took a {origin.pathToNeighbors[bestNeighbor].Count * 40} mile trek to a new village ({origin.pathToNeighbors[bestNeighbor].Count} tiles).");
-                    bestNeighbor.floatingPopulation += migrationSize;
-                    origin.floatingPopulation -= migrationSize;
-                }
-            }
-        }
-
-        public static void MajorMigration(HistoryManager manager, float migrationSize, Structure origin, bool byLand)
-        {
-            // By land.
-            if (byLand)
-            {
-                List<Hex> potentialDestinations = origin.Tile.hex.neighbors;
-
-                Tile bestOption = null;
-                float mostFertility = Mathf.NegativeInfinity;
-                
-                foreach (Hex h in potentialDestinations)
-                {
-                    if (h.tile.Fertility > mostFertility && h.tile.structures.Count == 0 && h.isWalkable)
-                    {
-                        mostFertility = h.tile.Fertility;
-                        bestOption = h.tile;
-                    }
-                }
-
-                if (bestOption != null)
-                {
-                    Structure s = new Structure(bestOption, migrationSize);
-                    origin.floatingPopulation -= migrationSize;
-                    manager.newStructures.Add(s);
-                }
-            }
+            
         }
         #endregion
     }

@@ -10,16 +10,18 @@ namespace DeadReckoning.Sim
         public int year;
         public int day;
         public int totalPopulation;
-        public int startingStructures = 10;
+        public int startingCivilizations = 50;
+        public int startingCountySize = 5;
 
         public HistoryManager HistoryManager;
         public WorldGeneration.HexSphereGenerator hGen;
 
         public void PassDay()
         {
-            // We'll add more here once we have more stuff.
             HistoryManager.PassDay(hGen);
+
             totalPopulation = HistoryManager.worldPopulation;
+
             day = HistoryManager.Day;
             year = day / 365;
         }
@@ -56,7 +58,7 @@ namespace DeadReckoning.Sim
 
         public void Setup(List<Tile> landTiles)
         {
-            HistoryManager = new HistoryManager(startingStructures, landTiles);
+            HistoryManager = new HistoryManager(startingCivilizations, startingCountySize, landTiles);
             totalPopulation = HistoryManager.worldPopulation;
         }
     }

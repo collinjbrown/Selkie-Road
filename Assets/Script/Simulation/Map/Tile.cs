@@ -4,6 +4,7 @@ using UnityEngine;
 using DeadReckoning.WorldGeneration;
 using DeadReckoning.Constructs;
 using System.Linq;
+using DeadReckoning.Sim;
 
 namespace DeadReckoning.Map
 {
@@ -139,6 +140,7 @@ namespace DeadReckoning.Map
 
         public TileMap map;
         public TectonicPlate plate;
+        public County county;
 
         public Dictionary<Resource.Type, Resource> resources;
 

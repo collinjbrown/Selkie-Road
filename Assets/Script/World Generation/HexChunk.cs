@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using DeadReckoning.Procedural;
-
+using DeadReckoning.Map;
 
 namespace DeadReckoning.WorldGeneration
 {
@@ -58,6 +58,10 @@ namespace DeadReckoning.WorldGeneration
         public Color[] precipitationColors;
         [HideInInspector]
         public Color[] plateColors;
+        [HideInInspector]
+        public Color[] countyColors;
+        [HideInInspector]
+        public Color[] nationColors;
 
         [HideInInspector]
         public Vector3[] wallVerts;
@@ -105,7 +109,7 @@ namespace DeadReckoning.WorldGeneration
 
             if (lens == GlobeCamera.Lens.plain)
             {
-                foreach (GrassController g in this.gameObject.GetComponentsInChildren<GrassController>(true))
+                foreach (ProceduralContainer g in this.gameObject.GetComponentsInChildren<ProceduralContainer>(true))
                 {
                     if (g.gameObject != this)
                     {
@@ -115,7 +119,7 @@ namespace DeadReckoning.WorldGeneration
             }
             else
             {
-                foreach (GrassController g in this.gameObject.GetComponentsInChildren<GrassController>(true))
+                foreach (ProceduralContainer g in this.gameObject.GetComponentsInChildren<ProceduralContainer>(true))
                 {
                     if (g.gameObject != this)
                     {
@@ -172,6 +176,18 @@ namespace DeadReckoning.WorldGeneration
                 mesh.SetUVs(2, dummyUV);
                 mesh.SetUVs(3, randomUV);
                 mesh.colors = plateColors;
+            }
+            else if (lens == GlobeCamera.Lens.counties)
+            {
+                mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
+                mesh.colors = countyColors;
+            }
+            else if (lens == GlobeCamera.Lens.nations)
+            {
+                mesh.SetUVs(2, dummyUV);
+                mesh.SetUVs(3, randomUV);
+                mesh.colors = nationColors;
             }
 
             // mesh.Optimize();
@@ -236,6 +252,8 @@ namespace DeadReckoning.WorldGeneration
                 temperatureColors = new Color[mapVerts.Length];
                 precipitationColors = new Color[mapVerts.Length];
                 plateColors = new Color[mapVerts.Length];
+                countyColors = new Color[mapVerts.Length];
+                nationColors = new Color[mapVerts.Length];
 
                 for (int dum = 0; dum < dummyUV.Length; dum++) // This is used when we want to show colors rather than textures.
                 {
@@ -275,51 +293,34 @@ namespace DeadReckoning.WorldGeneration
                     for (int i = 0; i < 10; i++)
                     {
                         randomUV[(t * vertsPerHex) + i + vertOffset] = new Vector2(variance, 0);
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         biomeUV[(t * vertsPerHex) + i + vertOffset] = h.uv;
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         mapColors[(t * vertsPerHex) + i + vertOffset] = h.color;
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         windColors[(t * vertsPerHex) + i + vertOffset] = h.windColor;
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         currentColors[(t * vertsPerHex) + i + vertOffset] = h.currentColor;
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         biomeColors[(t * vertsPerHex) + i + vertOffset] = h.biomeColor;
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         precipitationColors[(t * vertsPerHex) + i + vertOffset] = h.precipitationColor;
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         temperatureColors[(t * vertsPerHex) + i + vertOffset] = h.temperatureColor;
-                    }
-
-                    for (int i = 0; i < 10; i++)
-                    {
                         plateColors[(t * vertsPerHex) + i + vertOffset] = h.tile.plate.color;
+
+                        if (h.tile.county != null)
+                        {
+                            countyColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.color;
+
+                            if (h.tile.county.civ != null)
+                            {
+                                nationColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.civ.color;
+                            }
+                            else
+                            {
+                                nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                            }
+                        }
+                        else
+                        {
+                            countyColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                            nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                        }
                     }
-                    //else
-                    //{
-                    //    plateColors[(t * 13) + 0 + vertOffset] = Color.white;
-                    //}
 
                     // Triangle One (A - BC - B)
                     mapTris[(t * trisPerHex) + 0 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
@@ -375,51 +376,34 @@ namespace DeadReckoning.WorldGeneration
                         for (int i = 10; i < vertsPerHex; i++)
                         {
                             biomeUV[(t * vertsPerHex) + i + vertOffset] = h.uv;
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             randomUV[(t * vertsPerHex) + i + vertOffset] = new Vector2(variance, 0);
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             mapColors[(t * vertsPerHex) + i + vertOffset] = h.color;
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             windColors[(t * vertsPerHex) + i + vertOffset] = h.windColor;
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             currentColors[(t * vertsPerHex) + i + vertOffset] = h.currentColor;
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             biomeColors[(t * vertsPerHex) + i + vertOffset] = h.biomeColor;
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             temperatureColors[(t * vertsPerHex) + i + vertOffset] = h.temperatureColor;
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             precipitationColors[(t * vertsPerHex) + i + vertOffset] = h.precipitationColor;
-                        }
-
-                        for (int i = 10; i < vertsPerHex; i++)
-                        {
                             plateColors[(t * vertsPerHex) + i + vertOffset] = h.tile.plate.color;
+
+                            if (h.tile.county != null)
+                            {
+                                countyColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.color;
+
+                                if (h.tile.county.civ != null)
+                                {
+                                    nationColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.civ.color;
+                                }
+                                else
+                                {
+                                    nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                                }
+                            }
+                            else
+                            {
+                                countyColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                                nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                            }
                         }
-                        //else
-                        //{
-                        //    plateColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
-                        //}
 
                         // Triangle Nine (A - FG - F)
                         mapTris[(t * trisPerHex) + 24 + triOffset] = (t * vertsPerHex) + 0 + vertOffset;
@@ -451,19 +435,12 @@ namespace DeadReckoning.WorldGeneration
                         mapUV[(t * vertsPerHex) + 10 + vertOffset] = Vector2.Lerp(new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f);
 
                         biomeUV[(t * vertsPerHex) + 10 + vertOffset] = h.uv;
-
                         randomUV[(t * vertsPerHex) + 10 + vertOffset] = new Vector2(variance, 0);
-
                         mapColors[(t * vertsPerHex) + 10 + vertOffset] = h.color;
-
                         windColors[(t * vertsPerHex) + 10 + vertOffset] = h.windColor;
-
                         currentColors[(t * vertsPerHex) + 10 + vertOffset] = h.currentColor;
-
                         biomeColors[(t * vertsPerHex) + 10 + vertOffset] = h.biomeColor;
-
                         precipitationColors[(t * vertsPerHex) + 10 + vertOffset] = h.precipitationColor;
-
                         temperatureColors[(t * vertsPerHex) + 10 + vertOffset] = h.temperatureColor;
 
                         if (h.tile.plate != null)
@@ -473,6 +450,25 @@ namespace DeadReckoning.WorldGeneration
                         else
                         {
                             plateColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
+                        }
+
+                        if (h.tile.county != null)
+                        {
+                            countyColors[(t * vertsPerHex) + 10 + vertOffset] = h.tile.county.color;
+
+                            if (h.tile.county.civ != null)
+                            {
+                                nationColors[(t * vertsPerHex) + 10 + vertOffset] = h.tile.county.civ.color;
+                            }
+                            else
+                            {
+                                nationColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
+                            }
+                        }
+                        else
+                        {
+                            countyColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
+                            nationColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
                         }
 
                         // Triangle Nine (A - FB - F)

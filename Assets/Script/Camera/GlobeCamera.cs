@@ -13,7 +13,7 @@ public class GlobeCamera : MonoBehaviour
 
     public Lens lens;
 
-    public enum Lens { plain, matte, winds, currents, biomes, temperature, precipitation, plates } // Add more later.
+    public enum Lens { plain, matte, winds, currents, biomes, temperature, precipitation, plates, counties, nations } // Add more later.
 
     public GameObject target;
 

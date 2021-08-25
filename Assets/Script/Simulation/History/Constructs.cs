@@ -9,27 +9,49 @@ namespace DeadReckoning.Constructs
 {
     public class Structure
     {
+        public void PassDay(HexSphereGenerator hGen)
+        {
+            GrowPopulation();
+            CullPopulation();
+
+            if (buildings < NecessaryBuildings)
+            {
+                Vector3 randLoc = Vector3.Lerp(Tile.hex.vertices[Random.Range(0, Tile.hex.vertices.Length)].pos, Tile.hex.vertices[Random.Range(0, Tile.hex.vertices.Length)].pos, Random.Range(0, 1f));
+                randLoc = Vector3.Lerp(randLoc, Tile.hex.center.pos, Random.Range(0.1f, 0.9f));
+                Tile.hex.chunk.AddBuilding(new Procedural.ProceduralGeneration.Building(hGen.procSettings, Procedural.ProceduralGeneration.Building.Type.hut, randLoc));
+                buildings++;
+            }
+        }
+
+        #region Population
         public int Population { get { return Mathf.RoundToInt(floatingPopulation); } }
 
         public float floatingPopulation;
 
         public void GrowPopulation() { floatingPopulation += floatingPopulation * PopulationDynamics.CalculateDailyGrowth(floatingPopulation, Tile); }
         public void CullPopulation() { floatingPopulation -= floatingPopulation * PopulationDynamics.CalculateDailyDeaths(this); }
+        public void Migrations() { PopulationDynamics.CalculateMigration(this); }
+        #endregion
 
+        #region Buildings
         public int buildings;
         public int NecessaryBuildings { get { return 1 + (Population / 100); } }
+        #endregion
 
+        #region County & Tile
+        public County County { get; }
         public Tile Tile { get; }
-        public Dictionary<Resource, int> stores;
+        #endregion
 
-        public Dictionary<Structure, List<Hex>> pathToNeighbors;
-
+        #region Gov, Culture, Religion, & Language
         Government Government { get; }
         Culture Culture { get; }
         Religion Religion { get; }
         Language Language { get; }
+        #endregion
 
         #region Resources
+        public Dictionary<Resource, int> stores;
         public void ReapAndConsume()
         {
             foreach (KeyValuePair<Resource.Type, Resource> r in Tile.resources)
@@ -71,14 +93,16 @@ namespace DeadReckoning.Constructs
         #endregion
 
         #region Constructors
-        public Structure(Tile tile, float startingPop)
+        public Structure(County county, Tile tile, float startingPop)
         {
-            pathToNeighbors = new Dictionary<Structure, List<Hex>>();
             stores = new Dictionary<Resource, int>();
 
             tile.structures.Add(this);
             floatingPopulation = startingPop;
+
             Tile = tile;
+            County = county;
+
             Government = new Government((Government.Type)Random.Range(0, 3));
             Culture = new Culture(true, true);
             Religion = new Religion();
@@ -87,7 +111,6 @@ namespace DeadReckoning.Constructs
 
         public Structure(Tile tile, Government government, Culture culture, Religion religion, Language language)
         {
-            pathToNeighbors = new Dictionary<Structure, List<Hex>>();
             stores = new Dictionary<Resource, int>();
 
             tile.structures.Add(this);

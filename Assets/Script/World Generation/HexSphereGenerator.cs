@@ -205,6 +205,10 @@ namespace DeadReckoning.WorldGeneration
                     }
 
                     map.Generate(this);
+                    
+                    generalManager.hGen = this;
+                    generalManager.Setup(map.land);
+                    // generalManager.PassDay();
 
                     foreach (HexChunk c in chunks)
                     {
@@ -213,10 +217,6 @@ namespace DeadReckoning.WorldGeneration
 
                         c.CullHexes();
                     }
-
-                    generalManager.hGen = this;
-                    generalManager.Setup(map.land);
-                    generalManager.PassDay();
                 }
                 else
                 {
