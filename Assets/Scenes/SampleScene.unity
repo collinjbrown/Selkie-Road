@@ -2040,9 +2040,11 @@ MonoBehaviour:
   year: 0
   day: 0
   totalPopulation: 0
-  startingStructures: 30
+  startingCivilizations: 50
   startingCountySize: 5
   hGen: {fileID: 1638805055}
+  hostPrefab: {fileID: 6649097945290835108, guid: c06173915f903f74aa335f6411d4a51e,
+    type: 3}
 --- !u!4 &1032770727
 Transform:
   m_ObjectHideFlags: 0

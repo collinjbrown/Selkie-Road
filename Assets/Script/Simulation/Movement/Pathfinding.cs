@@ -20,6 +20,7 @@ namespace DeadReckoning.Map {
             List<Hex> closedSet = new List<Hex>();
 
             openSet.Add(origin);
+            origin.gCost = 0;
 
             int depthSearched = 0;
 
@@ -69,6 +70,7 @@ namespace DeadReckoning.Map {
                 }
             }
 
+            Debug.Log("Ho boy.");
             return new List<Hex>();
         }
 

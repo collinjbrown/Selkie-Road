@@ -36,11 +36,15 @@ namespace DeadReckoning.Sim
 
         public Civilization (County startingCounty)
         {
-            counties = new List<County>();
-            counties.Add(startingCounty);
+            counties = new List<County>
+            {
+                startingCounty
+            };
             startingCounty.civ = this;
 
             color = Random.ColorHSV();
+
+            Structure structure = new Structure(startingCounty, startingCounty.domain[0], Random.Range(100, 1001));
         }
     }
 
@@ -76,14 +80,13 @@ namespace DeadReckoning.Sim
         public County(Tile startingTile)
         {
             structures = new List<Structure>();
-            domain = new List<Tile>();
-            domain.Add(startingTile);
+            domain = new List<Tile>
+            {
+                startingTile
+            };
             startingTile.county = this;
 
             color = Random.ColorHSV();
-
-            Structure s = new Structure(this, startingTile, Random.Range(100, 1001));
-            structures.Add(s);
         }
     }
 }

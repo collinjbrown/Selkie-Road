@@ -16,11 +16,24 @@ namespace DeadReckoning.Sim
         public int worldPopulation = 0;
         public List<County> counties;
         public List<Civilization> civilizations;
+        public List<Host> hosts;
+        public List<Host> endHosts;
 
-        public void PassDay(WorldGeneration.HexSphereGenerator hGen)
+        public void PassDay(HexSphereGenerator hGen)
         {
             int population = 0;
+            endHosts = new List<Host>();
             day++;
+
+            foreach (Host h in hosts)
+            {
+                h.Move();
+            }
+
+            foreach (Host h in endHosts)
+            {
+                hosts.Remove(h);
+            }
 
             foreach (Civilization civ in civilizations)
             {
@@ -88,6 +101,7 @@ namespace DeadReckoning.Sim
         {
             counties = new List<County>();
             civilizations = new List<Civilization>();
+            hosts = new List<Host>();
 
             day = 0;
             GenerateCounties(landTiles, desiredCountySize);

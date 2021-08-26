@@ -17,17 +17,16 @@ public class GlobeCamera : MonoBehaviour
 
     public GameObject target;
 
-    void FixedUpdate()
+    public void FixedUpdate()
     {
         Vector3 relativeUp = FindRelativeAxes(this.transform.position)[1];
 
         if (target == null)
         {
 
-            RaycastHit hit;
             Ray ray = new Ray(this.transform.position, this.transform.forward);
 
-            if (Physics.Raycast(ray, out hit, 1000.0f))
+            if (Physics.Raycast(ray, out RaycastHit hit, 1000.0f))
             {
                 target = hit.transform.gameObject;
             }
@@ -114,7 +113,7 @@ public class GlobeCamera : MonoBehaviour
     }
 
     Lens oldLens;
-    void Update ()
+    public void Update ()
     {
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
@@ -127,10 +126,9 @@ public class GlobeCamera : MonoBehaviour
         {
             oldLens = lens;
 
-            RaycastHit hit;
             Ray ray = new Ray(this.transform.position, this.transform.forward);
 
-            if (Physics.Raycast(ray, out hit, 1000.0f))
+            if (Physics.Raycast(ray, out RaycastHit hit, 1000.0f))
             {
                 GameObject objectHit = hit.transform.gameObject;
                 objectHit.transform.parent.gameObject.GetComponent<HexSphereGenerator>().ChangeLenses();

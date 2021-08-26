@@ -85,7 +85,36 @@ namespace DeadReckoning.Sim
         #region Migrations
         public static void CalculateMigration(Structure structure)
         {
-            
+            //if (Random.Range(0,101) > minorMigrationChance)
+            //{
+
+            //}
+
+            if ((structure.Population / structure.Tile.PopulationLimit) > 0.25f && Random.Range(0, 101) > majorMigrationChance)
+            {
+                Hex bestTarget = null;
+                float bestValue = Mathf.NegativeInfinity;
+
+                foreach (Tile t in structure.County.domain)
+                {
+                    foreach(Hex h in t.hex.neighbors)
+                    {
+                        if (h.tile.county != null)
+                        {
+                            if (h.tile.county.civ == null && h.tile.Fertility > bestValue)
+                            {
+                                bestTarget = h;
+                                bestValue = h.tile.Fertility;
+                            }
+                        }
+                    }
+                }
+
+                if (bestTarget != null)
+                {
+                    GeneralManager.instance.GenerateHost(structure.County.civ, Mathf.RoundToInt(structure.Population * Random.Range(0.1f, 0.3f)), Host.Purpose.settlement, structure.Tile.hex, bestTarget);
+                }
+            }
         }
         #endregion
     }

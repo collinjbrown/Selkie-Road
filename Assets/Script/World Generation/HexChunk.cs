@@ -185,6 +185,8 @@ namespace DeadReckoning.WorldGeneration
             }
             else if (lens == GlobeCamera.Lens.nations)
             {
+                UpdateNations();
+
                 mesh.SetUVs(2, dummyUV);
                 mesh.SetUVs(3, randomUV);
                 mesh.colors = nationColors;
@@ -193,6 +195,101 @@ namespace DeadReckoning.WorldGeneration
             // mesh.Optimize();
             mesh.RecalculateNormals();
             // mesh.RecalculateBounds();
+        }
+
+        public void UpdateNations()
+        {
+            int vMod = 0;
+            int tMod = 0;
+
+            if (wallVerts.Length > 0)
+            {
+                vMod = wallVerts.Length;
+                tMod = wallTris.Length;
+            }
+
+            int vertsPerHex = 12 + 1;
+
+            nationColors = new Color[mapVerts.Length];
+
+            int vertOffset = 0;
+
+            for (int t = 0; t < hexes.Length; t++)
+            {
+                Hex h = hexes[t];
+
+                for (int i = 0; i < 10; i++)
+                {
+                    if (h.tile.county != null)
+                    {
+                        countyColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.color;
+
+                        if (h.tile.county.civ != null)
+                        {
+                            nationColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.civ.color;
+                        }
+                        else
+                        {
+                            nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                        }
+                    }
+                    else
+                    {
+                        countyColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                        nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                    }
+                }
+
+                if (!h.pent)
+                {
+                    for (int i = 10; i < vertsPerHex; i++)
+                    {
+                        if (h.tile.county != null)
+                        {
+                            countyColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.color;
+
+                            if (h.tile.county.civ != null)
+                            {
+                                nationColors[(t * vertsPerHex) + i + vertOffset] = h.tile.county.civ.color;
+                            }
+                            else
+                            {
+                                nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                            }
+                        }
+                        else
+                        {
+                            countyColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                            nationColors[(t * vertsPerHex) + i + vertOffset] = Color.white;
+                        }
+                    }
+
+                    vertOffset = 0;
+                }
+                else
+                {
+                    if (h.tile.county != null)
+                    {
+                        countyColors[(t * vertsPerHex) + 10 + vertOffset] = h.tile.county.color;
+
+                        if (h.tile.county.civ != null)
+                        {
+                            nationColors[(t * vertsPerHex) + 10 + vertOffset] = h.tile.county.civ.color;
+                        }
+                        else
+                        {
+                            nationColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
+                        }
+                    }
+                    else
+                    {
+                        countyColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
+                        nationColors[(t * vertsPerHex) + 10 + vertOffset] = Color.white;
+                    }
+
+                    vertOffset = -2;
+                }
+            }
         }
 
         public void MapVertsAndTris(bool hex)
@@ -369,7 +466,7 @@ namespace DeadReckoning.WorldGeneration
                         mapVerts[(t * vertsPerHex) + 11 + vertOffset] = (h.vertices[4].pos + h.vertices[5].pos) / 2.0f;  // FG
                         mapVerts[(t * vertsPerHex) + 12 + vertOffset] = (h.vertices[5].pos + h.vertices[0].pos) / 2.0f;  // GB
 
-                        mapUV[(t * vertsPerHex) + 10 + vertOffset] = (new Vector2(-1,0) + new Vector2(1, 0.5f)) * 0.5f;
+                        mapUV[(t * vertsPerHex) + 10 + vertOffset] = (new Vector2(-1, 0) + new Vector2(1, 0.5f)) * 0.5f;
                         mapUV[(t * vertsPerHex) + 11 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, -Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
                         mapUV[(t * vertsPerHex) + 12 + vertOffset] = (Vector2.Lerp(new Vector2(-1, 0), new Vector2(-0.5f, Mathf.Sqrt(3) / 2.0f), 0.5f) + new Vector2(1, 0.5f)) * 0.5f;
 
@@ -1067,9 +1164,11 @@ namespace DeadReckoning.WorldGeneration
                 if (!hGen.vertHexes.ContainsKey(v.pos))
                 {
                     // Set up new hex.
-                    Hex newHex = new Hex();
-                    newHex.center = new Vertex(v.pos);
-                    newHex.color = color;
+                    Hex newHex = new Hex
+                    {
+                        center = new Vertex(v.pos),
+                        color = color
+                    };
                     hGen.vertHexes.Add(v.pos, newHex);
                     newHex.chunk = this;
 
@@ -1126,8 +1225,10 @@ namespace DeadReckoning.WorldGeneration
             {
                 Vertex v = new Vertex(new Vector3(0, hGen.worldRadius, 0));
 
-                Hex newHex = new Hex();
-                newHex.center = new Vertex(v.pos);
+                Hex newHex = new Hex
+                {
+                    center = new Vertex(v.pos)
+                };
                 hGen.vertHexes.Add(v.pos, newHex);
                 newHex.color = color;
                 newHex.vertices = new Vertex[6];
@@ -1149,14 +1250,15 @@ namespace DeadReckoning.WorldGeneration
                 hexCenters.Add(newHex.center.pos, newHex);
                 hexes[hFound] = newHex;
                 hGen.unsortedHexes.Add(newHex);
-                hFound++;
             }
             else if (number == 19)
             {
                 Vertex v = new Vertex(new Vector3(0, -hGen.worldRadius, 0));
 
-                Hex newHex = new Hex();
-                newHex.center = new Vertex(v.pos);
+                Hex newHex = new Hex
+                {
+                    center = new Vertex(v.pos)
+                };
                 hGen.vertHexes.Add(v.pos, newHex);
                 newHex.color = color;
                 newHex.vertices = new Vertex[6];
@@ -1178,7 +1280,6 @@ namespace DeadReckoning.WorldGeneration
                 hexCenters.Add(newHex.center.pos, newHex);
                 hexes[hFound] = newHex;
                 hGen.unsortedHexes.Add(newHex);
-                hFound++;
             }
         }
 
@@ -1556,29 +1657,41 @@ namespace DeadReckoning.WorldGeneration
                     flipMod = -1;
                 }
 
-                Vertex a = new Vertex(oldTri.vA.pos);
-                a.x = oldTri.vA.x;
-                a.y = oldTri.vA.y;
+                Vertex a = new Vertex(oldTri.vA.pos)
+                {
+                    x = oldTri.vA.x,
+                    y = oldTri.vA.y
+                };
 
-                Vertex ab = new Vertex((oldTri.vA.pos + oldTri.vB.pos) / 2.0f);
-                ab.x = oldTri.vB.x;
-                ab.y = oldTri.vB.y;
+                Vertex ab = new Vertex((oldTri.vA.pos + oldTri.vB.pos) / 2.0f)
+                {
+                    x = oldTri.vB.x,
+                    y = oldTri.vB.y
+                };
 
-                Vertex b = new Vertex(oldTri.vB.pos);
-                b.x = oldTri.vB.x + 1;
-                b.y = oldTri.vB.y + flipMod;
+                Vertex b = new Vertex(oldTri.vB.pos)
+                {
+                    x = oldTri.vB.x + 1,
+                    y = oldTri.vB.y + flipMod
+                };
 
-                Vertex bc = new Vertex((oldTri.vB.pos + oldTri.vC.pos) / 2.0f);
-                bc.x = oldTri.vC.x;
-                bc.y = oldTri.vC.y + flipMod;
+                Vertex bc = new Vertex((oldTri.vB.pos + oldTri.vC.pos) / 2.0f)
+                {
+                    x = oldTri.vC.x,
+                    y = oldTri.vC.y + flipMod
+                };
 
-                Vertex c = new Vertex(oldTri.vC.pos);
-                c.x = oldTri.vC.x + 1;
-                c.y = oldTri.vC.y;
+                Vertex c = new Vertex(oldTri.vC.pos)
+                {
+                    x = oldTri.vC.x + 1,
+                    y = oldTri.vC.y
+                };
 
-                Vertex ca = new Vertex((oldTri.vC.pos + oldTri.vA.pos) / 2.0f);
-                ca.x = oldTri.vC.x;
-                ca.y = oldTri.vC.y;
+                Vertex ca = new Vertex((oldTri.vC.pos + oldTri.vA.pos) / 2.0f)
+                {
+                    x = oldTri.vC.x,
+                    y = oldTri.vC.y
+                };
 
 
                 Triangle aabca = new Triangle(a, ab, ca);
@@ -1620,7 +1733,7 @@ namespace DeadReckoning.WorldGeneration
 
             int r = o + 1;
             int l = o - 1;
-            int v = 0;
+            int v;
 
             // Right Irregularities
             if ((o + 1) % 5 == 0 && o != 9)
@@ -1713,15 +1826,6 @@ namespace DeadReckoning.WorldGeneration
         public static Vector3 RelativeMovement(Vector3 p, Vector3 forward, Vector3 up, Vector3 right)
         {
             return new Vector3((p.x * right.x) + (p.y * up.x) + (p.z * forward.x), (p.x * right.y) + (p.y * up.y) + (p.z * forward.y), (p.x * right.z) + (p.y * up.z) + (p.z * forward.z));
-        }
-
-        Vector3 YRotation(Vector3 p, float ang)
-        {
-            Vector3 xAxis = new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang));
-            Vector3 yAxis = new Vector3(0, 1, 0);
-            Vector3 zAxis = new Vector3(-Mathf.Sin(ang), 0, Mathf.Cos(ang));
-
-            return RelativeMovement(p, zAxis, yAxis, xAxis);
         }
 
         public static Vector2 PerpendicularLine(Vector2 vector2)

@@ -39,10 +39,11 @@ namespace DeadReckoning.WorldGeneration
                                                                textureArray[0].height,
                                                                textureArray.Length,
                                                                TextureFormat.RGBA32,
-                                                               true, false);
-
-            texture2DArray.filterMode = FilterMode.Bilinear;
-            texture2DArray.wrapMode = TextureWrapMode.Repeat;
+                                                               true, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Repeat
+            };
 
             for (int i = 0; i < textureArray.Length; i++)
             {
@@ -82,7 +83,7 @@ namespace DeadReckoning.WorldGeneration
         #endregion
 
         #region General Generation
-        void Start()
+        public void Start()
         {
             // Starts the generation process (if that's something we want).
 
@@ -329,11 +330,11 @@ namespace DeadReckoning.WorldGeneration
 
         #region Icosahedron Data
 
-        static float t = 100.0f;
-        static float r = t * 0.89441592209664961889545770584312f;
-        static float q = 0.447215f;
+        static readonly float t = 100.0f;
+        static readonly float r = t * 0.89441592209664961889545770584312f;
+        static readonly float q = 0.447215f;
 
-        Vector3[] icoVerts = new Vector3[] // 12
+        readonly Vector3[] icoVerts = new Vector3[] // 12
         {
         new Vector3 (0,
             t,
@@ -373,7 +374,7 @@ namespace DeadReckoning.WorldGeneration
         new Vector3 (0, -t, 0)
         };
 
-        int[] icoTris = new int[] { // 60
+        readonly int[] icoTris = new int[] { // 60
         0,2,1,  // 1
         0,3,2,
         0,4,3,
@@ -475,7 +476,7 @@ namespace DeadReckoning.WorldGeneration
 
         public bool isWalkable = true;
         public float hCost;
-        public float gCost;
+        public float gCost = Mathf.Infinity;
         public float FCost { get { return gCost + hCost; } }
         public Hex parentHex;
         public float movementPenalty;

@@ -21,6 +21,8 @@ namespace DeadReckoning.Constructs
                 Tile.hex.chunk.AddBuilding(new Procedural.ProceduralGeneration.Building(hGen.procSettings, Procedural.ProceduralGeneration.Building.Type.hut, randLoc));
                 buildings++;
             }
+
+            Migrations();
         }
 
         #region Population
@@ -97,11 +99,13 @@ namespace DeadReckoning.Constructs
         {
             stores = new Dictionary<Resource, int>();
 
-            tile.structures.Add(this);
-            floatingPopulation = startingPop;
-
             Tile = tile;
             County = county;
+
+            tile.structures.Add(this);
+            county.structures.Add(this);
+
+            floatingPopulation = startingPop;
 
             Government = new Government((Government.Type)Random.Range(0, 3));
             Culture = new Culture(true, true);

@@ -730,9 +730,9 @@ namespace DeadReckoning.Procedural
 
         #region Icosahedron Data
 
-        static float t = 100.0f;
-        static float r = t * 0.89441592209664961889545770584312f;
-        static float q = 0.447215f;
+        static readonly float t = 100.0f;
+        static readonly float r = t * 0.89441592209664961889545770584312f;
+        static readonly float q = 0.447215f;
 
         public static Vector3[] icoVerts = new Vector3[] // 12
         {
@@ -887,11 +887,12 @@ namespace DeadReckoning.Procedural
 
             triangles.Add(newTriangle);
 
-            List<Edge> edges = new List<Edge>();
-
-            edges.Add(new Edge(newTriangle.v1, newTriangle.v2));
-            edges.Add(new Edge(newTriangle.v2, newTriangle.v3));
-            edges.Add(new Edge(newTriangle.v3, newTriangle.v1));
+            List<Edge> edges = new List<Edge>
+            {
+                new Edge(newTriangle.v1, newTriangle.v2),
+                new Edge(newTriangle.v2, newTriangle.v3),
+                new Edge(newTriangle.v3, newTriangle.v1)
+            };
 
             for (int i = 3; i < points.Count; i++)
             {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DeadReckoning.Map;
+using DeadReckoning.WorldGeneration;
 
 namespace DeadReckoning.Sim
 {
@@ -15,6 +16,7 @@ namespace DeadReckoning.Sim
 
         public HistoryManager HistoryManager;
         public WorldGeneration.HexSphereGenerator hGen;
+        public GameObject hostPrefab;
 
         public void PassDay()
         {
@@ -26,6 +28,18 @@ namespace DeadReckoning.Sim
             year = day / 365;
         }
 
+        #region Creating Objects
+        public void GenerateHost(Civilization civ, int hostSize, Host.Purpose purpose, Hex start, Hex end)
+        {
+            GameObject g = Instantiate(hostPrefab, start.center.pos, Quaternion.identity, this.transform);
+            g.transform.up = start.center.pos.normalized;
+
+            g.GetComponent<Host>().Initiate(HistoryManager, civ, hostSize, purpose, start, end);
+            HistoryManager.hosts.Add(g.GetComponent<Host>());
+        }
+        #endregion
+
+        #region Passage of Time
         public void PassDays(int days)
         {
             for (int i = 0; i < days; i++)
@@ -61,5 +75,11 @@ namespace DeadReckoning.Sim
             HistoryManager = new HistoryManager(startingCivilizations, startingCountySize, landTiles);
             totalPopulation = HistoryManager.worldPopulation;
         }
+        #endregion
+
+        #region Instance
+        public static GeneralManager instance;
+        public void Awake() { instance = this; }
+        #endregion
     }
 }
